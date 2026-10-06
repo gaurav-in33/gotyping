@@ -124,6 +124,51 @@ describe('app shell', () => {
     expect(container.querySelector('.skip-link')).toBeTruthy();
     expect(container.querySelector('main#main')).toBeTruthy();
   });
+
+  it('mobile bottom bar reaches every primary section directly, plus Tools via More', async () => {
+    await mountApp();
+    // Give the app's document-level link-click interceptor (registered in a
+    // useEffect) a moment to attach before we start synthesizing clicks on
+    // real <a href> elements below.
+    await settle(3);
+    const bottomLinks = Array.from(container.querySelectorAll('.bottombar > a.navlink')).map(
+      (a) => a.textContent,
+    );
+    expect(bottomLinks).toEqual(['Type', 'Learn', 'Practice', 'Stats', 'Settings']);
+
+    // Tools is not a direct bottom-bar link...
+    expect(bottomLinks).not.toContain('Tools');
+
+    // ...but it is reachable through the "More" button.
+    const moreBtn = Array.from(container.querySelectorAll('.bottombar__more .navlink')).find(
+      (el) => el.textContent === 'More',
+    ) as HTMLButtonElement | undefined;
+    expect(moreBtn).toBeTruthy();
+    expect(container.querySelector('.bottombar__sheet')).toBeFalsy();
+
+    moreBtn!.click();
+    await waitFor('.bottombar__sheet-link');
+    const sheetLinks = Array.from(container.querySelectorAll('.bottombar__sheet-link')).map(
+      (a) => a.textContent,
+    );
+    expect(sheetLinks).toContain('Tools');
+
+    const toolsLink = Array.from(container.querySelectorAll('.bottombar__sheet-link')).find(
+      (a) => a.textContent === 'Tools',
+    ) as HTMLAnchorElement;
+    toolsLink.click();
+    await waitFor('.tools');
+    await settle(4);
+    expect(container.textContent).toContain('Keyboard tester');
+    // The sheet closes itself after navigating.
+    expect(container.querySelector('.bottombar__sheet')).toBeFalsy();
+
+    // Routing is global history state, shared across tests in this file —
+    // leave it as we found it so later tests that assume the default route
+    // ('/') are not affected by this test having navigated away.
+    const { navigate } = await import('../src/router');
+    navigate('/', true);
+  });
 });
 
 describe('type screen', () => {
@@ -300,7 +345,7 @@ describe('learn / practice / stats / tools sections', () => {
     await waitFor('.practice');
     await settle(6);
     expect(container.textContent).toContain('Practice');
-    expect(container.querySelectorAll('.profile-card').length).toBe(6);
+    expect(container.querySelectorAll('.profile-card').length).toBe(10);
     expect(errors).toEqual([]);
     spy.mockRestore();
   });

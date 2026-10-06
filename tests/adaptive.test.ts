@@ -60,10 +60,27 @@ describe('adaptive scoring (docs/05)', () => {
 });
 
 describe('adaptive profiles', () => {
-  it('ships at least the six documented, implemented profiles', () => {
+  it('ships all ten documented profiles', () => {
     const ids = PROFILES.map((p) => p.id);
-    for (const id of ['weak-keys', 'slow-keys', 'difficult-words', 'accuracy', 'speed', 'endurance']) {
-      expect(ids).toContain(id);
+    expect(ids).toEqual([
+      'weak-keys',
+      'slow-keys',
+      'difficult-words',
+      'accuracy',
+      'speed',
+      'endurance',
+      'error-recovery',
+      'bigram-trainer',
+      'trigram-trainer',
+      'consistency-drill',
+    ]);
+  });
+
+  it('every profile reuses the shared scoring pipeline (mode + weights), no bespoke fields beyond session tweaks', () => {
+    for (const p of PROFILES) {
+      expect(['keys', 'words', 'bigrams', 'trigrams']).toContain(p.mode);
+      expect(typeof p.weights.error).toBe('number');
+      expect(typeof p.weights.latency).toBe('number');
     }
   });
 
@@ -220,5 +237,108 @@ describe('practice planner (deterministic, seeded)', () => {
     });
     expect(plan.words).toEqual([]);
     expect(plan.usedFallback).toBe(true);
+  });
+
+  it('bigram-trainer scores words by their two-letter windows, from agg.bigrams', () => {
+    const agg = emptyAggregates();
+    // "th" is a weak bigram; words containing it should be favored.
+    agg.bigrams['th'] = cell(MIN_SAMPLES, 7, 100);
+    const plan = planPracticeText({
+      pool: bigPool, // includes "star" (no 'th') and we add a 'th' word below
+      agg,
+      profile: profileById('bigram-trainer'),
+      count: 300,
+      seed: 'bigram-seed',
+      easyShare: 0,
+    });
+    expect(plan.usedFallback).toBe(false);
+    expect(plan.topNeeds[0]!.item).toBe('th');
+  });
+
+  it('bigram-trainer favors a word containing the weak bigram over one that does not', () => {
+    const agg = emptyAggregates();
+    agg.bigrams['th'] = cell(MIN_SAMPLES, 8, 100);
+    // A pool large enough that the variety guard does not force round-robin.
+    const withBigram = ['moth', 'cloth', 'bath', 'path', 'math', 'earth', 'month', 'worth'];
+    const without = ['star', 'moon', 'river', 'camel', 'zebra', 'snake', 'otter', 'eagle'];
+    const plan = planPracticeText({
+      pool: [...withBigram, ...without],
+      agg,
+      profile: profileById('bigram-trainer'),
+      count: 400,
+      seed: 'bigram-pick',
+      easyShare: 0,
+    });
+    const a = withBigram.reduce((s, w) => s + plan.words.filter((x) => x === w).length, 0) / withBigram.length;
+    const b = without.reduce((s, w) => s + plan.words.filter((x) => x === w).length, 0) / without.length;
+    expect(a).toBeGreaterThan(b);
+  });
+
+  it('trigram-trainer scores words by their three-letter windows, from agg.trigrams', () => {
+    const agg = emptyAggregates();
+    agg.trigrams['igh'] = cell(MIN_SAMPLES, 8, 100);
+    const withTrigram = ['night', 'light', 'sight', 'right', 'flight', 'bright', 'eight', 'might'];
+    const without = ['star', 'moon', 'river', 'camel', 'zebra', 'snake', 'otter', 'eagle'];
+    const plan = planPracticeText({
+      pool: [...withTrigram, ...without],
+      agg,
+      profile: profileById('trigram-trainer'),
+      count: 400,
+      seed: 'trigram-pick',
+      easyShare: 0,
+    });
+    expect(plan.usedFallback).toBe(false);
+    const a = withTrigram.reduce((s, w) => s + plan.words.filter((x) => x === w).length, 0) / withTrigram.length;
+    const b = without.reduce((s, w) => s + plan.words.filter((x) => x === w).length, 0) / without.length;
+    expect(a).toBeGreaterThan(b);
+  });
+
+  it('error-recovery reacts with far fewer samples than weak-keys needs', () => {
+    const agg = emptyAggregates();
+    // Only 3 samples — below the engine-wide MIN_SAMPLES, but error-recovery
+    // overrides its own minSamples to react to a fresh mistake immediately.
+    agg.keys['q'] = cell(3, 3, 100);
+    const weak = planPracticeText({
+      pool: ['quiz', 'quit', 'quick', 'star', 'moon', 'river'],
+      agg,
+      profile: profileById('weak-keys'),
+      count: 50,
+      seed: 'recovery-vs-weak',
+      easyShare: 0,
+    });
+    const recovery = planPracticeText({
+      pool: ['quiz', 'quit', 'quick', 'star', 'moon', 'river'],
+      agg,
+      profile: profileById('error-recovery'),
+      count: 50,
+      seed: 'recovery-vs-weak',
+      easyShare: 0,
+    });
+    expect(weak.usedFallback).toBe(true); // too few samples for the default threshold
+    expect(recovery.usedFallback).toBe(false); // error-recovery's lower threshold picks it up
+  });
+
+  it('error-recovery sets stop-on-error so a mistake is corrected before moving on', () => {
+    expect(profileById('error-recovery').stopOnError).toBe(true);
+  });
+
+  it('consistency-drill produces a roughly even spread with no targeting', () => {
+    const agg = emptyAggregates();
+    agg.words['dog'] = cell(MIN_SAMPLES, 8, 100); // even with history present...
+    const plan = planPracticeText({
+      pool: bigPool,
+      agg,
+      profile: profileById('consistency-drill'),
+      count: 400,
+      seed: 'consistency-seed',
+      easyShare: 0,
+    });
+    // ...consistency-drill's zero weights mean "dog" is not specially favored.
+    const dogShare = plan.words.filter((w) => w === 'dog').length / plan.words.length;
+    expect(dogShare).toBeLessThan(2 / bigPool.length);
+  });
+
+  it('consistency-drill runs for longer than a normal session', () => {
+    expect(profileById('consistency-drill').durationMultiplier).toBeGreaterThan(1);
   });
 });

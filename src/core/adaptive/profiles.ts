@@ -1,17 +1,30 @@
 /**
- * Adaptive profiles (docs/05). One engine, many profiles: each profile is a
- * data entry (weights + a sampling mode), not a separate code path.
+ * Adaptive profiles (docs/05). One engine, many profiles: every profile is a
+ * data entry (weights + a sampling mode + optional session tweaks) that
+ * flows through the exact same scoring/sampling pipeline in scoring.ts and
+ * planner.ts — there is no per-profile code path.
  *
- * Scope note (Step 2 rebuild): six of the ten documented profiles are
- * implemented with real scoring — Weak Keys, Slow Keys, Difficult Words,
- * Accuracy Drill, Speed Drill, Endurance Drill. Error Recovery, Bigram
- * Trainer, Trigram Trainer and Consistency Drill are not built this round;
- * see the Step 2 report for what that takes.
+ * All ten documented profiles are implemented. Four of them reuse the
+ * existing keys/words scoring with a different configuration rather than a
+ * new data dimension — that is deliberate, not a shortcut:
+ *   - Error Recovery: the same "keys" error-rate scoring as Weak Keys, but
+ *     with a much lower minimum-sample threshold, so a key you only just
+ *     started mistyping gets drilled immediately instead of waiting for
+ *     MIN_SAMPLES mistakes to accumulate — plus stop-on-error, so you fix
+ *     the slip before moving on.
+ *   - Consistency Drill: the same "words" scoring with error/latency weights
+ *     at zero, which the planner already treats as "no bias" (see
+ *     planPracticeText) — i.e. a long, unweighted, steady-pace session. The
+ *     consistency number itself still comes from the existing Metrics calc.
+ *   - Bigram Trainer / Trigram Trainer *do* add a new scoring dimension
+ *     (agg.bigrams / agg.trigrams instead of agg.keys / agg.words), but
+ *     through the same needMap/needScore machinery — see sourceForMode and
+ *     planner.ts's windowed word-scoring.
  */
 import { needMap, type NeedWeights } from './scoring';
-import type { Aggregates } from '../../store/types';
+import type { Aggregates, StatCell } from '../../store/types';
 
-export type ProfileMode = 'keys' | 'words';
+export type ProfileMode = 'keys' | 'words' | 'bigrams' | 'trigrams';
 
 export interface Profile {
   id: string;
@@ -23,8 +36,25 @@ export interface Profile {
   stopOnError?: boolean;
   /** Short burst (seconds) instead of the configured session length. */
   fixedSeconds?: number;
-  /** Multiplies the configured session length (endurance). */
+  /** Multiplies the configured session length (endurance, consistency). */
   durationMultiplier?: number;
+  /** Override the engine-wide minimum-sample threshold (error recovery). */
+  minSamples?: number;
+}
+
+/** Which aggregate map backs a given profile mode — the one place this is decided. */
+export function sourceForMode(agg: Aggregates, mode: ProfileMode): Record<string, StatCell> {
+  switch (mode) {
+    case 'keys':
+      return agg.keys;
+    case 'bigrams':
+      return agg.bigrams;
+    case 'trigrams':
+      return agg.trigrams;
+    case 'words':
+    default:
+      return agg.words;
+  }
 }
 
 export const PROFILES: Profile[] = [
@@ -73,6 +103,37 @@ export const PROFILES: Profile[] = [
     weights: { error: 0.3, latency: 0.3 },
     durationMultiplier: 5,
   },
+  {
+    id: 'error-recovery',
+    name: 'Error Recovery',
+    description: 'Jumps on keys the moment they start going wrong, and stops on error so you correct it right away.',
+    mode: 'keys',
+    weights: { error: 1, latency: 0 },
+    stopOnError: true,
+    minSamples: 3,
+  },
+  {
+    id: 'bigram-trainer',
+    name: 'Bigram Trainer',
+    description: 'Words built around the two-letter sequences that slow you down or trip you up.',
+    mode: 'bigrams',
+    weights: { error: 0.6, latency: 0.4 },
+  },
+  {
+    id: 'trigram-trainer',
+    name: 'Trigram Trainer',
+    description: 'Words built around your weakest three-letter sequences.',
+    mode: 'trigrams',
+    weights: { error: 0.6, latency: 0.4 },
+  },
+  {
+    id: 'consistency-drill',
+    name: 'Consistency Drill',
+    description: 'A longer, unweighted session with no targeting — the goal is a flat pace, not raw speed. Check your consistency score in Stats afterwards.',
+    mode: 'words',
+    weights: { error: 0, latency: 0 },
+    durationMultiplier: 2,
+  },
 ];
 
 export function profileById(id: string): Profile {
@@ -90,8 +151,7 @@ export function recommendProfile(agg: Aggregates): Profile {
   let best = candidates[0]!;
   let bestScore = -1;
   for (const p of candidates) {
-    const source = p.mode === 'keys' ? agg.keys : agg.words;
-    const map = needMap(source, p.weights);
+    const map = needMap(sourceForMode(agg, p.mode), p.weights);
     const top = map.size > 0 ? Math.max(...map.values()) : 0;
     if (top > bestScore) {
       bestScore = top;

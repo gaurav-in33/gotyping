@@ -5,23 +5,49 @@
 import { makeRng } from '../../core/text/rng';
 import type { Aggregates } from '../../store/types';
 import { needMap, type NeedWeights } from './scoring';
-import type { Profile } from './profiles';
+import { sourceForMode, type Profile, type ProfileMode } from './profiles';
 
 export interface PlanResult {
   words: string[];
   text: string;
   /** True when there was not enough history to score anything (docs/05: say so plainly). */
   usedFallback: boolean;
-  /** The items (keys or words) that most drove this plan, for the "why" explanation. */
+  /** The items (keys, bigrams, trigrams or words) that most drove this plan, for the "why" explanation. */
   topNeeds: Array<{ item: string; need: number }>;
 }
 
-function wordNeed(word: string, byChar: Map<string, number>): number {
-  const chars = Array.from(word.toLowerCase());
-  if (chars.length === 0) return 0;
+/** How many characters wide a scored "item" is for a given profile mode. */
+function windowSizeForMode(mode: ProfileMode): number {
+  switch (mode) {
+    case 'keys':
+      return 1;
+    case 'bigrams':
+      return 2;
+    case 'trigrams':
+      return 3;
+    case 'words':
+    default:
+      return 0; // whole-word lookup, not a sliding window
+  }
+}
+
+/**
+ * A word's need score under a given mode: the direct score for "words", or
+ * the average need across its sliding n-gram windows for keys/bigrams/
+ * trigrams (so e.g. a Bigram Trainer scores "the" by its "th" and "he").
+ */
+function wordNeedForMode(word: string, itemNeed: Map<string, number>, mode: ProfileMode): number {
+  const w = word.toLowerCase();
+  if (mode === 'words') return itemNeed.get(w) ?? 0;
+  const n = windowSizeForMode(mode);
+  if (w.length < n) return 0;
   let sum = 0;
-  for (const c of chars) sum += byChar.get(c) ?? 0;
-  return sum / chars.length;
+  let count = 0;
+  for (let i = 0; i + n <= w.length; i++) {
+    sum += itemNeed.get(w.slice(i, i + n)) ?? 0;
+    count++;
+  }
+  return count > 0 ? sum / count : 0;
 }
 
 /** Weighted sample without replacement-ish: caps any one word's share and avoids close repeats. */
@@ -84,8 +110,9 @@ export function planPracticeText(opts: PlanOptions): PlanResult {
   }
 
   const weights: NeedWeights = opts.profile.weights;
-  const source = opts.profile.mode === 'keys' ? opts.agg.keys : opts.agg.words;
-  const itemNeed = needMap(source, weights, opts.minSamples);
+  const source = sourceForMode(opts.agg, opts.profile.mode);
+  const minSamples = opts.minSamples ?? opts.profile.minSamples;
+  const itemNeed = needMap(source, weights, minSamples);
 
   if (itemNeed.size === 0) {
     // Not enough data yet — fall back to a plain, uniform sample (docs/05).
@@ -97,10 +124,7 @@ export function planPracticeText(opts: PlanOptions): PlanResult {
   const EPSILON = 0.02; // every word keeps a non-zero chance, even if "easy"
   const weighted = pool.map((word) => ({
     word,
-    weight:
-      opts.profile.mode === 'keys'
-        ? wordNeed(word, itemNeed) + EPSILON
-        : (itemNeed.get(word.toLowerCase()) ?? 0) + EPSILON,
+    weight: wordNeedForMode(word, itemNeed, opts.profile.mode) + EPSILON,
   }));
 
   const easyCount = Math.round(opts.count * opts.easyShare);
