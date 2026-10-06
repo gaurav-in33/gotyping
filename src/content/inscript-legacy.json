@@ -1,0 +1,182 @@
+{
+  "status": "LEGACY, UNVERIFIED. Built from memory in the old project. Verify every key against an authoritative Inscript chart before shipping. KeyZ was added late and is explicitly unverified.",
+  "layout": "inscript",
+  "keys": {
+    "Digit1": {
+      "normal": "१",
+      "shift": "!"
+    },
+    "Digit2": {
+      "normal": "२",
+      "shift": "@"
+    },
+    "Digit3": {
+      "normal": "३",
+      "shift": "#"
+    },
+    "Digit4": {
+      "normal": "४",
+      "shift": "$"
+    },
+    "Digit5": {
+      "normal": "५",
+      "shift": "%"
+    },
+    "Digit6": {
+      "normal": "६",
+      "shift": "^"
+    },
+    "Digit7": {
+      "normal": "७",
+      "shift": "&"
+    },
+    "Digit8": {
+      "normal": "८",
+      "shift": "*"
+    },
+    "Digit9": {
+      "normal": "९",
+      "shift": "("
+    },
+    "Digit0": {
+      "normal": "०",
+      "shift": ")"
+    },
+    "KeyQ": {
+      "normal": "ौ",
+      "shift": "औ"
+    },
+    "KeyW": {
+      "normal": "ै",
+      "shift": "ऐ"
+    },
+    "KeyE": {
+      "normal": "ा",
+      "shift": "आ"
+    },
+    "KeyR": {
+      "normal": "ी",
+      "shift": "ई"
+    },
+    "KeyT": {
+      "normal": "ू",
+      "shift": "ऊ"
+    },
+    "KeyY": {
+      "normal": "ब",
+      "shift": "भ"
+    },
+    "KeyU": {
+      "normal": "ह",
+      "shift": "ङ"
+    },
+    "KeyI": {
+      "normal": "ग",
+      "shift": "घ"
+    },
+    "KeyO": {
+      "normal": "द",
+      "shift": "ध"
+    },
+    "KeyP": {
+      "normal": "ज",
+      "shift": "झ"
+    },
+    "BracketLeft": {
+      "normal": "ड",
+      "shift": "ढ"
+    },
+    "BracketRight": {
+      "normal": "़",
+      "shift": "ञ"
+    },
+    "KeyA": {
+      "normal": "ो",
+      "shift": "ओ"
+    },
+    "KeyS": {
+      "normal": "े",
+      "shift": "ए"
+    },
+    "KeyD": {
+      "normal": "्",
+      "shift": "अ"
+    },
+    "KeyF": {
+      "normal": "ि",
+      "shift": "इ"
+    },
+    "KeyG": {
+      "normal": "ु",
+      "shift": "उ"
+    },
+    "KeyH": {
+      "normal": "प",
+      "shift": "फ"
+    },
+    "KeyJ": {
+      "normal": "र",
+      "shift": "ऱ"
+    },
+    "KeyK": {
+      "normal": "क",
+      "shift": "ख"
+    },
+    "KeyL": {
+      "normal": "त",
+      "shift": "थ"
+    },
+    "Semicolon": {
+      "normal": "च",
+      "shift": "छ"
+    },
+    "Quote": {
+      "normal": "ट",
+      "shift": "ठ"
+    },
+    "KeyX": {
+      "normal": "ं",
+      "shift": "ँ"
+    },
+    "KeyC": {
+      "normal": "म",
+      "shift": "ण"
+    },
+    "KeyV": {
+      "normal": "न",
+      "shift": "न"
+    },
+    "KeyB": {
+      "normal": "व",
+      "shift": "व"
+    },
+    "KeyN": {
+      "normal": "ल",
+      "shift": "ळ"
+    },
+    "KeyM": {
+      "normal": "स",
+      "shift": "श"
+    },
+    "Comma": {
+      "normal": ",",
+      "shift": "ष"
+    },
+    "Period": {
+      "normal": ".",
+      "shift": "।"
+    },
+    "Slash": {
+      "normal": "य",
+      "shift": "य"
+    },
+    "KeyZ": {
+      "normal": "ॆ",
+      "shift": "ऎ"
+    },
+    "Space": {
+      "normal": " ",
+      "shift": " "
+    }
+  }
+}
