@@ -139,6 +139,14 @@ in jsdom, not a real engine — a quick manual pass is cheap insurance:
   feel generic/random rather than obviously repeating your personal weak
   keys; turn it back on and confirm the drill noticeably reuses your weak
   spots again.
+- [ ] **Learn lesson grid column counts** (Learn screen) — the lesson tiles
+  are meant to show 2 columns on a phone, 3–4 on a tablet, 5–6 on a
+  desktop, and stay square without clipping any title text. This is pure
+  CSS (`src/features/learn/learn.css`) reviewed by reading only — jsdom
+  reports every layout dimension as 0, so the actual column counts and
+  tile squareness have never been seen rendered. Also confirm every
+  lesson tile opens (no lesson is locked any more — this was removed on
+  purpose) and that the "Continue" badge lands on a sensible lesson.
 
 ## What is explicitly out of scope here
 

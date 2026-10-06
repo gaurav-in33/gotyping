@@ -470,7 +470,7 @@ describe('settings screen', () => {
 });
 
 describe('learn / practice / stats / tools sections', () => {
-  it('Learn renders the course home with no console errors', async () => {
+  it('Learn renders the course home as a tile grid with no console errors', async () => {
     const { navigate } = await import('../src/router');
     const errors: unknown[] = [];
     const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
@@ -480,8 +480,38 @@ describe('learn / practice / stats / tools sections', () => {
     await settle(4);
     expect(container.textContent).toContain('Learn');
     expect(container.querySelectorAll('.course-card').length).toBeGreaterThan(0);
+    // Lessons render as a grid of square tiles, not the old list rows.
+    expect(container.querySelectorAll('.lesson-grid').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.lesson-tile').length).toBeGreaterThan(20);
     expect(errors).toEqual([]);
     spy.mockRestore();
+  });
+
+  it('Learn: no lesson tile is locked — every tile is a real link, deep lessons are clickable', async () => {
+    const { navigate } = await import('../src/router');
+    await mountApp();
+    navigate('/learn');
+    await waitFor('.lesson-grid');
+    await settle(4);
+
+    const tiles = Array.from(container.querySelectorAll('a.lesson-tile')) as HTMLAnchorElement[];
+    expect(tiles.length).toBeGreaterThan(20);
+    for (const t of tiles) {
+      // The old lock logic set aria-disabled + data-locked and swallowed the
+      // click with e.preventDefault(); none of that should exist any more.
+      expect(t.getAttribute('aria-disabled')).toBeNull();
+      expect(t.getAttribute('data-locked')).toBeNull();
+      expect(t.getAttribute('href')).toMatch(/^\/learn\//);
+    }
+
+    // Deep-link a lesson far into its course that has never been attempted.
+    // Under the old lock logic this tile's click handler would call
+    // e.preventDefault() and the router's linkHandler would never fire.
+    const deepTile = tiles.find((t) => t.getAttribute('href') === '/learn/en-beginner-07');
+    expect(deepTile).toBeTruthy();
+    deepTile!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    await waitFor('.u', 6000);
+    expect(container.textContent).toContain('Index finger reach');
   });
 
   it('Learn lesson screen loads a lesson and renders typing text', async () => {
