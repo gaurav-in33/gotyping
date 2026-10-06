@@ -1,0 +1,61 @@
+.practice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s6);
+}
+
+.practice-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--s3);
+}
+
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  text-align: left;
+  padding: var(--s3);
+  border-radius: var(--r-control);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.profile-card[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.profile-card__name {
+  font-weight: 600;
+}
+
+.profile-card__desc {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.profile-card--recommended::after {
+  content: 'Recommended';
+  align-self: flex-start;
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.whats-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  align-items: center;
+}
+
+.need-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--muted);
+}

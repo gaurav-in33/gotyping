@@ -258,6 +258,30 @@
   gap: var(--s8);
 }
 
+.result__pass {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  width: fit-content;
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r-control);
+  font-size: 0.86rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+.result__pass--ok {
+  color: var(--good, #1a7f4b);
+  border-color: var(--good, #1a7f4b);
+  background: color-mix(in srgb, var(--good, #1a7f4b) 12%, transparent);
+}
+
+.result__pass--no {
+  color: var(--bad, #c0392b);
+  border-color: var(--bad, #c0392b);
+  background: color-mix(in srgb, var(--bad, #c0392b) 12%, transparent);
+}
+
 .result__big {
   display: flex;
   flex-direction: column;

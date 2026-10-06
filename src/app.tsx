@@ -25,6 +25,38 @@ registerSection({
 });
 
 registerSection({
+  id: 'learn',
+  path: '/learn',
+  label: 'Learn',
+  primary: true,
+  load: () => import('./features/learn/LearnScreen'),
+});
+
+registerSection({
+  id: 'practice',
+  path: '/practice',
+  label: 'Practice',
+  primary: true,
+  load: () => import('./features/practice/PracticeScreen'),
+});
+
+registerSection({
+  id: 'stats',
+  path: '/stats',
+  label: 'Stats',
+  primary: true,
+  load: () => import('./features/stats/StatsScreen'),
+});
+
+registerSection({
+  id: 'tools',
+  path: '/tools',
+  label: 'Tools',
+  primary: false,
+  load: () => import('./features/tools/KeyboardTester'),
+});
+
+registerSection({
   id: 'settings',
   path: '/settings',
   label: 'Settings',

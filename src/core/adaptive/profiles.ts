@@ -8,7 +8,8 @@
  * Trainer, Trigram Trainer and Consistency Drill are not built this round;
  * see the Step 2 report for what that takes.
  */
-import type { NeedWeights } from './scoring';
+import { needMap, type NeedWeights } from './scoring';
+import type { Aggregates } from '../../store/types';
 
 export type ProfileMode = 'keys' | 'words';
 
@@ -76,4 +77,26 @@ export const PROFILES: Profile[] = [
 
 export function profileById(id: string): Profile {
   return PROFILES.find((p) => p.id === id) ?? PROFILES[0]!;
+}
+
+/**
+ * Pick the single profile the engine would recommend right now: whichever
+ * of "Weak Keys" / "Slow Keys" / "Difficult Words" has the strongest signal
+ * in the user's own aggregates. Falls back to Difficult Words (a gentle,
+ * general drill) when there just is not enough history yet.
+ */
+export function recommendProfile(agg: Aggregates): Profile {
+  const candidates = ['weak-keys', 'slow-keys', 'difficult-words'].map(profileById);
+  let best = candidates[0]!;
+  let bestScore = -1;
+  for (const p of candidates) {
+    const source = p.mode === 'keys' ? agg.keys : agg.words;
+    const map = needMap(source, p.weights);
+    const top = map.size > 0 ? Math.max(...map.values()) : 0;
+    if (top > bestScore) {
+      bestScore = top;
+      best = p;
+    }
+  }
+  return bestScore > 0 ? best : profileById('difficult-words');
 }

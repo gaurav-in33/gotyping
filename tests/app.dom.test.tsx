@@ -107,7 +107,7 @@ describe('app shell', () => {
     const links = Array.from(container.querySelectorAll('.topbar__nav a')).map(
       (a) => a.textContent,
     );
-    expect(links).toEqual(['Type', 'Settings']);
+    expect(links).toEqual(['Type', 'Learn', 'Practice', 'Stats', 'Tools', 'Settings']);
     expect(errors).toEqual([]);
     spy.mockRestore();
   });
@@ -259,6 +259,73 @@ describe('settings screen', () => {
     navigate('/settings');
     await waitFor('.settings');
     expect(container.querySelector('.badge--beta')?.textContent).toMatch(/beta/i);
+  });
+});
+
+describe('learn / practice / stats / tools sections', () => {
+  it('Learn renders the course home with no console errors', async () => {
+    const { navigate } = await import('../src/router');
+    const errors: unknown[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
+    await mountApp();
+    navigate('/learn');
+    await waitFor('.learn');
+    await settle(4);
+    expect(container.textContent).toContain('Learn');
+    expect(container.querySelectorAll('.course-card').length).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
+    spy.mockRestore();
+  });
+
+  it('Learn lesson screen loads a lesson and renders typing text', async () => {
+    const { navigate } = await import('../src/router');
+    await mountApp();
+    navigate('/learn/en-beginner-02');
+    await waitFor('.u', 6000);
+    expect(container.textContent).toContain('F and J anchors');
+    const units = new Set(
+      Array.from(container.querySelectorAll('.u'))
+        .map((u) => u.textContent)
+        .filter((t) => t && t !== '\u00A0'),
+    );
+    for (const u of units) expect(['f', 'j']).toContain(u);
+  });
+
+  it('Practice renders a profile picker with no console errors', async () => {
+    const { navigate } = await import('../src/router');
+    const errors: unknown[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
+    await mountApp();
+    navigate('/practice');
+    await waitFor('.practice');
+    await settle(6);
+    expect(container.textContent).toContain('Practice');
+    expect(container.querySelectorAll('.profile-card').length).toBe(6);
+    expect(errors).toEqual([]);
+    spy.mockRestore();
+  });
+
+  it('Stats renders an empty-history message with no saved tests', async () => {
+    const { navigate } = await import('../src/router');
+    await mountApp();
+    navigate('/stats');
+    await waitFor('.stats');
+    await settle(4);
+    expect(container.textContent).toContain('No tests yet');
+  });
+
+  it('Tools renders the keyboard tester with no console errors', async () => {
+    const { navigate } = await import('../src/router');
+    const errors: unknown[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
+    await mountApp();
+    navigate('/tools');
+    await waitFor('.tools');
+    await settle(4);
+    expect(container.textContent).toContain('Keyboard tester');
+    expect(container.querySelectorAll('.kbd-diagram__key').length).toBeGreaterThan(20);
+    expect(errors).toEqual([]);
+    spy.mockRestore();
   });
 });
 

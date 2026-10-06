@@ -8,7 +8,7 @@ import {
   smoothedErrorRate,
 } from '../src/core/adaptive/scoring';
 import { planPracticeText } from '../src/core/adaptive/planner';
-import { PROFILES, profileById } from '../src/core/adaptive/profiles';
+import { PROFILES, profileById, recommendProfile } from '../src/core/adaptive/profiles';
 import { EASY_WORD_SHARE } from '../src/store/settings';
 import { emptyAggregates, type Aggregates, type StatCell } from '../src/store/types';
 
@@ -75,6 +75,24 @@ describe('adaptive profiles', () => {
     expect(EASY_WORD_SHARE.easy).toBeCloseTo(0.3);
     expect(EASY_WORD_SHARE.normal).toBeCloseTo(0.15);
     expect(EASY_WORD_SHARE.hard).toBeCloseTo(0.05);
+  });
+
+  it('recommends a gentle fallback with no history', () => {
+    expect(recommendProfile(emptyAggregates()).id).toBe('difficult-words');
+  });
+
+  it('recommends slow-keys when latency is the dominant signal', () => {
+    const agg = emptyAggregates();
+    // 'a' is far slower than the user's own median; neither key has errors.
+    agg.keys['a'] = cell(MIN_SAMPLES, 0, 400);
+    agg.keys['b'] = cell(MIN_SAMPLES, 0, 100);
+    expect(recommendProfile(agg).id).toBe('slow-keys');
+  });
+
+  it('recommends weak-keys when error rate is the dominant signal', () => {
+    const agg = emptyAggregates();
+    agg.keys['a'] = cell(MIN_SAMPLES, 7, 100); // lots of errors, normal speed
+    expect(recommendProfile(agg).id).toBe('weak-keys');
   });
 });
 

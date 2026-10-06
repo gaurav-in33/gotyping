@@ -433,6 +433,8 @@ export default function TypeScreen() {
         failed={failed}
         onRestart={() => resetTest()}
         onNext={() => setSeed(Date.now())}
+        targetWpm={settings.practice.targetWpm}
+        targetAccuracy={settings.practice.targetAccuracy}
       />
     );
   }
