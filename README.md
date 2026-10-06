@@ -32,9 +32,11 @@ npm run dev      # http://localhost:5173
   paragraph, sentence, numbers, punctuation, mixed); punctuation / numbers /
   capitalization toggles; keep-going or stop-on-error; backspace free / word-only / off;
   space-skips-word with undo; live stats; result screen with a hand-drawn SVG graph;
-  an on-screen keyboard (optional, incl. Hindi) that highlights the next key and
-  supports tap-to-type. "More modes": Ghost race, Memory, Blind, Random capitalization,
-  Difficult words, Sudden death, Speed burst, Endurance.
+  a display-only keyboard guide (normal + Shift labels, next-key/finger cues) with
+  optional tap-to-type. Hindi phone input maps English-QWERTY Gboard characters
+  through the same InScript table as a physical keyboard. "More modes": Ghost race,
+  Memory, Blind, Random capitalization, Difficult words, Sudden death, Speed burst,
+  Endurance.
 - **Learn** — a structured course with adaptive lessons that target your actual
   weak keys/bigrams once there's enough history, a finger guide that follows the
   active language/layout, and persisted pass/best/progress per lesson.
@@ -48,6 +50,7 @@ npm run dev      # http://localhost:5173
   (Settings → Practice) can reduce or fully remove the gamification layer.
 - **Tools** — Typing utilities (WPM/CPM/accuracy calculators, counters, text
   analyzer), Keyboard (tester, key visualizer, finger guide, layout reference),
+  **Phone keyboard test** (raw Gboard/iOS event inspector + final mapped unit),
   Text tools (generator, cleaner, formatter, case converter, punctuation
   helper, local text importer), Hindi/Indian (InScript + Remington reference,
   Unicode notes, exam-style practice honestly labelled as such), Productivity
@@ -108,14 +111,14 @@ service worker are all hand-written. See `CHANGELOG.md` for why jsdom was added.
 npm test
 ```
 
-280+ tests covering the engine state machine, metric formulas against hand-computed
+308 tests covering the engine state machine, metric formulas against hand-computed
 fixtures, seeded text generators, keyboard resolvers (QWERTY, InScript, Remington),
 adaptive scoring/planning, XP/levels/streaks/achievements, lesson generation and
 progress, settings migrations, history caps and filters, aggregate maths, backup
 round-trips (including corrupted input), the theme contrast helper, the Tools
 calculators, fun modes, and a DOM integration suite that mounts the real app and
-drives it with real key events, soft-keyboard `beforeinput` events, and on-screen
-keyboard taps (English and Hindi).
+drives it with real key events, soft-keyboard `beforeinput`/`input`/composition
+sequences, and display-only/optional-tap keyboard-guide interactions (English and Hindi).
 
 **Not verifiable in this environment:** a real browser (Chromium could not be
 installed — no network route to its mirror, and Puppeteer/Playwright's download

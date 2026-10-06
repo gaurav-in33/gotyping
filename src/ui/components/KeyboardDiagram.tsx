@@ -16,10 +16,10 @@ export interface KeyboardDiagramProps {
   /** Extra class, e.g. to mark a key pressed or unverified. */
   classFor?: (key: KeyCap) => string | undefined;
   onKeyClick?: (key: KeyCap) => void;
+  /** Optional pointer hook for display-first keyboard guides that preserve input focus. */
+  onKeyPointerDown?: (event: PointerEvent, key: KeyCap) => void;
   ariaLabel: string;
 }
-
-const KEY_UNIT = 40;
 
 export function KeyboardDiagram({
   layout,
@@ -27,12 +27,17 @@ export function KeyboardDiagram({
   subLabelFor,
   classFor,
   onKeyClick,
+  onKeyPointerDown,
   ariaLabel,
 }: KeyboardDiagramProps) {
   return (
     <div class="kbd-diagram" role="group" aria-label={ariaLabel}>
       {layout.rows.map((row, ri) => (
-        <div class="kbd-diagram__row" key={ri} style={{ paddingLeft: `${row.offset * KEY_UNIT}px` }}>
+        <div
+          class="kbd-diagram__row"
+          key={ri}
+          style={{ '--row-offset': String(row.offset) } as unknown as string}
+        >
           {row.keys.map((k) => {
             const bg = colorFor?.(k);
             const extra = classFor?.(k) ?? '';
@@ -58,6 +63,7 @@ export function KeyboardDiagram({
                 style={bg ? { background: bg } : undefined}
                 title={title}
                 data-code={k.code}
+                onPointerDown={(e) => onKeyPointerDown?.(e, k)}
                 onClick={() => onKeyClick(k)}
               >
                 {content}

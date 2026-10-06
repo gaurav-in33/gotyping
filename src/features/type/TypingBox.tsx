@@ -9,11 +9,12 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import type { Capture } from '../../core/engine/session';
 import { Session, defaultSessionConfig, type BackspaceMode } from '../../core/engine/session';
 import type { Metrics } from '../../core/engine/metrics';
-import { LayoutResolver, unitsFromInsertedText } from '../../core/layouts/resolver';
+import { KeyboardInputReader } from '../../core/input/keyboard-reader';
 import { QWERTY } from '../../core/layouts/qwerty';
 import type { PhysicalLayout } from '../../core/layouts/qwerty';
 import { TextRenderer } from './TextRenderer';
 import { LiveStats, type LiveValues } from './LiveStats';
+import { KeyboardGuide } from './KeyboardGuide';
 import { useSettings } from '../../ui/useSettings';
 
 const now = (): number => performance.now();
@@ -52,19 +53,26 @@ export function TypingBox({
   onFail,
   showLiveStats = true,
 }: TypingBoxProps) {
-  const [settings] = useSettings();
+  const [settings, updateSettings] = useSettings();
   const [phase, setPhase] = useState<'ready' | 'typing' | 'done'>('ready');
   const [live, setLive] = useState<LiveValues>(EMPTY_LIVE);
   const [focused, setFocused] = useState(false);
+  const [nextChar, setNextChar] = useState<string | null>(null);
 
   const textRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const rendererRef = useRef<TextRenderer | null>(null);
   const sessionRef = useRef<Session | null>(null);
-  const resolverRef = useRef<LayoutResolver>(new LayoutResolver(layout ?? QWERTY));
+  const readerRef = useRef<KeyboardInputReader | null>(null);
+  if (!readerRef.current) {
+    readerRef.current = new KeyboardInputReader(layout ?? QWERTY, {
+      onUnit: () => {},
+      onBackspace: () => {},
+    });
+  }
 
   useEffect(() => {
-    resolverRef.current.setLayout(layout ?? QWERTY);
+    readerRef.current?.setLayout(layout ?? QWERTY);
   }, [layout]);
 
   const attachText = useCallback((el: HTMLDivElement | null) => {
@@ -100,6 +108,7 @@ export function TypingBox({
       r.refresh(sess.getStates(), 0);
     }
     setPhase('ready');
+    setNextChar(sess.getUnits()[0] ?? null);
     setLive({ ...EMPTY_LIVE, time: durationMs > 0 ? durationMs / 1000 : 0, countdown: durationMs > 0 });
 
     return sess.on((e) => {
@@ -142,6 +151,7 @@ export function TypingBox({
     if (!sess || sess.getStatus() === 'complete' || sess.getStatus() === 'failed') return;
     sess.handleChar(unit, now());
     if (r) r.update(sess.getStates(), sess.getPos());
+    setNextChar(sess.getUnits()[sess.getPos()] ?? null);
   }, []);
 
   const back = useCallback(() => {
@@ -150,7 +160,11 @@ export function TypingBox({
     if (!sess) return;
     sess.handleBackspace(now());
     if (r) r.update(sess.getStates(), sess.getPos());
+    setNextChar(sess.getUnits()[sess.getPos()] ?? null);
   }, []);
+
+  // Keep the reader's callbacks current without creating a second input path.
+  readerRef.current.setHandlers({ onUnit: feed, onBackspace: back, onEnter: () => feed('\n') });
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -159,34 +173,9 @@ export function TypingBox({
         (e.target as HTMLElement).blur();
         return;
       }
-      const out = resolverRef.current.resolve(e);
-      if (out.kind === 'char') {
-        e.preventDefault();
-        feed(out.unit);
-      } else if (out.kind === 'backspace') {
-        e.preventDefault();
-        back();
-      } else if (out.kind === 'enter') {
-        e.preventDefault();
-        feed('\n');
-      }
+      readerRef.current?.onKeyDown(e);
     },
-    [feed, back, phase],
-  );
-
-  const onBeforeInput = useCallback(
-    (e: InputEvent) => {
-      if (phase === 'done') return;
-      const type = e.inputType;
-      if (type === 'insertText' && typeof e.data === 'string') {
-        e.preventDefault();
-        for (const u of unitsFromInsertedText(e.data)) feed(u);
-      } else if (type === 'deleteContentBackward') {
-        e.preventDefault();
-        back();
-      }
-    },
-    [feed, back, phase],
+    [phase],
   );
 
   useEffect(() => {
@@ -223,15 +212,30 @@ export function TypingBox({
         ref={inputRef}
         class="type__input"
         type="text"
+        inputMode="text"
         autocomplete="off"
         autocapitalize="off"
         autocorrect="off"
         spellcheck={false}
         aria-label="Typing input"
         onKeyDown={onKeyDown}
-        onBeforeInput={onBeforeInput as unknown as (e: Event) => void}
+        onBeforeInput={(e) => readerRef.current?.onBeforeInput(e as unknown as InputEvent)}
+        onInput={(e) => readerRef.current?.onInput(e as unknown as InputEvent)}
+        onCompositionStart={(e) => readerRef.current?.onCompositionStart(e as unknown as CompositionEvent)}
+        onCompositionUpdate={(e) => readerRef.current?.onCompositionUpdate(e as unknown as CompositionEvent)}
+        onCompositionEnd={(e) => readerRef.current?.onCompositionEnd(e as unknown as CompositionEvent)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
+      />
+      <KeyboardGuide
+        layout={layout ?? QWERTY}
+        nextChar={nextChar}
+        visible={settings.keyboard.guideVisible}
+        onVisibleChange={(v) => updateSettings((d) => void (d.keyboard.guideVisible = v))}
+        highlightNextKey={settings.keyboard.highlightNextKey}
+        showKeyLabels={settings.keyboard.showKeyLabels}
+        tapToType={settings.keyboard.tapGuideToType}
+        onTap={settings.keyboard.tapGuideToType ? feed : undefined}
       />
     </div>
   );

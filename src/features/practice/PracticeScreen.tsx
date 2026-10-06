@@ -7,7 +7,7 @@ import { planPracticeText, type PlanResult } from '../../core/adaptive/planner';
 import { MIN_SAMPLES } from '../../core/adaptive/scoring';
 import { loadLanguage, type LanguagePack } from '../../content';
 import { isFunctional, layoutById } from '../../core/layouts/hindi';
-import { QWERTY } from '../../core/layouts/qwerty';
+import { layoutByAnyId } from '../../core/layouts/registry';
 import { useSettings } from '../../ui/useSettings';
 import { EASY_WORD_SHARE } from '../../store/settings';
 import { TypingBox } from '../type/TypingBox';
@@ -202,7 +202,7 @@ export default function PracticeScreen() {
         <TypingBox
           text={plan.text}
           resetToken={`${activeProfile.id}-${attempt}`}
-          layout={useHindi ? hindiLayout : QWERTY}
+          layout={useHindi ? hindiLayout : layoutByAnyId(settings.keyboard.physicalLayout)}
           durationMs={sessionSeconds * 1000}
           stopOnError={activeProfile.stopOnError ?? false}
           onComplete={onComplete}

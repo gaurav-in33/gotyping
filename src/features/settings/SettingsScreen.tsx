@@ -13,6 +13,8 @@ import { Category, Field, Segmented, Select, Slider, Toggle } from '../../ui/com
 import { Logo } from '../../ui/shell/Wordmark';
 import { ThemeBuilder } from './ThemeBuilder';
 import { EXTRA_LATIN_LAYOUTS } from '../../core/layouts/alt-latin';
+import { layoutByAnyId } from '../../core/layouts/registry';
+import { KeyboardGuide } from '../type/KeyboardGuide';
 import type { Settings } from '../../store/settings';
 import './settings.css';
 
@@ -374,21 +376,28 @@ export default function SettingsScreen() {
         title="Language and keyboard"
         advanced={
           <>
-            <Field label="On-screen keyboard" hint="Shows a keyboard under the typing box; tap a key to type it">
+            <Field label="Keyboard guide" hint="Shows the display-only layout guide under typing text. Its Show / Hide button is shared everywhere.">
               <Toggle
-                label="On-screen keyboard"
-                checked={s.display.showKeyboard}
-                onChange={(v) => update((d) => void (d.display.showKeyboard = v))}
+                label="Keyboard guide"
+                checked={s.keyboard.guideVisible}
+                onChange={(v) => update((d) => void (d.keyboard.guideVisible = v))}
               />
             </Field>
-            <Field label="Highlight next key" hint="On the on-screen keyboard, light up the key you need next">
+            <Field label="Tap guide to type" hint="Off by default. When off, guide taps never type or affect your phone keyboard.">
+              <Toggle
+                label="Tap guide to type"
+                checked={s.keyboard.tapGuideToType}
+                onChange={(v) => update((d) => void (d.keyboard.tapGuideToType = v))}
+              />
+            </Field>
+            <Field label="Highlight next key" hint="On the keyboard guide, light up the next key and Shift when needed">
               <Toggle
                 label="Highlight next key"
                 checked={s.keyboard.highlightNextKey}
                 onChange={(v) => update((d) => void (d.keyboard.highlightNextKey = v))}
               />
             </Field>
-            <Field label="Key labels" hint="Off hides the glyphs on the on-screen keyboard, for drilling recall">
+            <Field label="Key labels" hint="Off hides glyphs on the keyboard guide, for drilling recall">
               <Toggle
                 label="Key labels"
                 checked={s.keyboard.showKeyLabels}
@@ -460,6 +469,17 @@ export default function SettingsScreen() {
               ...EXTRA_LATIN_LAYOUTS.map((l) => ({ id: l.id, label: l.name })),
             ]}
             onChange={(v) => update((d) => void (d.keyboard.physicalLayout = v))}
+          />
+        </Field>
+        <Field label="Keyboard guide preview" hint="Normal glyph is large; Shift glyph is small. This is a guide, not a keyboard unless you opt in above.">
+          <KeyboardGuide
+            layout={s.language.current === 'hi' ? layoutById(s.keyboard.hindiLayout) : layoutByAnyId(s.keyboard.physicalLayout)}
+            nextChar={null}
+            visible={s.keyboard.guideVisible}
+            onVisibleChange={(v) => update((d) => void (d.keyboard.guideVisible = v))}
+            highlightNextKey={s.keyboard.highlightNextKey}
+            showKeyLabels={s.keyboard.showKeyLabels}
+            tapToType={false}
           />
         </Field>
       </Category>

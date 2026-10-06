@@ -204,6 +204,10 @@ describe('type screen', () => {
     // language pack has loaded.
     await waitFor('.u');
     expect(container.querySelector('.text')).toBeTruthy();
+    const typingInput = container.querySelector('.type__input') as HTMLInputElement;
+    expect(typingInput.autocomplete).toBe('off');
+    expect(typingInput.getAttribute('autocapitalize')).toBe('off');
+    expect(typingInput.getAttribute('autocorrect')).toBe('off');
     const units = container.querySelectorAll('.u');
     expect(units.length).toBeGreaterThan(20);
   });
@@ -359,46 +363,34 @@ describe('type screen', () => {
     await waitForCondition(() => /def|lambda|range/.test(text()));
   });
 
-  it('on-screen keyboard (docs/01 §9) highlights the next key and tap-to-type feeds it', async () => {
-    const { settingsStore } = await import('../src/store/settings');
-    settingsStore.update((d) => {
-      d.display.showKeyboard = true;
-      d.keyboard.highlightNextKey = true;
-    });
-
+  it('keyboard guide is display-only by default, highlights the next physical key, and shows both layers', async () => {
     await mountApp();
     await waitFor('.u');
-    await waitFor('.onscreen-kb');
-
-    // Set once at reset time (not only on the engine's tick), but still
-    // async relative to this click — poll rather than guess a tick count.
-    // Tap the *highlighted* key specifically (not "any key whose glyph
-    // matches"), since a Shift-only expected character never appears as a
-    // key's visible glyph, but is still the correct key to tap.
+    await waitFor('.keyboard-guide');
     await waitForCondition(() => !!container.querySelector('.kbd-diagram__key--next'));
-    const key = container.querySelector('.kbd-diagram__key--next') as HTMLButtonElement;
 
+    const key = container.querySelector('.kbd-diagram__key--next') as HTMLElement;
+    expect(key.tagName).toBe('SPAN');
+    expect(key.querySelector('.kbd-diagram__glyph')).toBeTruthy();
+    expect(key.querySelector('.kbd-diagram__sub')).toBeTruthy();
     key.click();
-    await waitForCondition(() => container.querySelector('.u')!.className.includes('u--ok'));
+    await settle(2);
+    // A reference tap never types unless the owner explicitly opts in.
+    expect(container.querySelector('.u')!.className).toBe('u');
   });
 
-  it('on-screen keyboard also drives Hindi (InScript) typing via tap-to-type', async () => {
+  it('optional tap guide to type also drives Hindi/InScript through the shared guide', async () => {
     const { settingsStore } = await import('../src/store/settings');
     settingsStore.update((d) => {
-      d.display.showKeyboard = true;
+      d.keyboard.guideVisible = true;
+      d.keyboard.tapGuideToType = true;
       d.language.current = 'hi';
       d.keyboard.hindiLayout = 'inscript';
     });
 
     await mountApp();
     await waitFor('.u');
-    await waitFor('.onscreen-kb');
-
-    // Poll rather than a fixed tick count: the Hindi word pack loads async,
-    // so the very first `.u` — and the key highlighted for it — can briefly
-    // still be mid-rebuild. Tap the highlighted key itself; some Hindi
-    // matras only exist in a key's Shift position and never appear as a
-    // key's visible glyph, so matching by displayed glyph text is wrong.
+    await waitFor('.keyboard-guide');
     await waitForCondition(() => !!container.querySelector('.kbd-diagram__key--next'));
     const key = container.querySelector('.kbd-diagram__key--next') as HTMLButtonElement;
 
@@ -434,7 +426,7 @@ describe('settings screen', () => {
     expect(localStorage.getItem('gotyping:settings')).toContain('stopOnError');
   });
 
-  it('exposes on-screen keyboard / finger guide toggles under "Show advanced"', async () => {
+  it('exposes global keyboard-guide / finger-guide toggles and the shared Settings preview', async () => {
     const { navigate } = await import('../src/router');
     const { settingsStore } = await import('../src/store/settings');
 
@@ -443,21 +435,22 @@ describe('settings screen', () => {
     await waitFor('.settings');
 
     const details = Array.from(container.querySelectorAll('details')).find((d) =>
-      d.textContent?.includes('On-screen keyboard'),
+      d.textContent?.includes('Keyboard guide'),
     ) as HTMLDetailsElement | undefined;
     expect(details).toBeTruthy();
     details!.open = true;
     await settle();
 
-    const before = settingsStore.get().display.showKeyboard;
+    const before = settingsStore.get().keyboard.guideVisible;
     const toggle = Array.from(container.querySelectorAll('[role="switch"]')).find(
-      (el) => el.getAttribute('aria-label') === 'On-screen keyboard',
+      (el) => el.getAttribute('aria-label') === 'Keyboard guide',
     ) as HTMLButtonElement | undefined;
     expect(toggle).toBeTruthy();
 
     toggle!.click();
     await settle();
-    expect(settingsStore.get().display.showKeyboard).toBe(!before);
+    expect(settingsStore.get().keyboard.guideVisible).toBe(!before);
+    expect(container.querySelector('.keyboard-guide')).toBeTruthy();
   });
 
   it('shows the Beta badge for the unverified Hindi layout', async () => {
@@ -519,6 +512,7 @@ describe('learn / practice / stats / tools sections', () => {
     await mountApp();
     navigate('/learn/en-beginner-02');
     await waitFor('.u', 6000);
+    expect(container.querySelector('.keyboard-guide')).toBeTruthy();
     expect(container.textContent).toContain('F and J anchors');
     const units = new Set(
       Array.from(container.querySelectorAll('.u'))
@@ -537,6 +531,7 @@ describe('learn / practice / stats / tools sections', () => {
     await waitFor('.practice');
     await settle(6);
     expect(container.textContent).toContain('Practice');
+    expect(container.querySelector('.keyboard-guide')).toBeTruthy();
     expect(container.querySelectorAll('.profile-card').length).toBe(10);
     expect(errors).toEqual([]);
     spy.mockRestore();
@@ -568,6 +563,18 @@ describe('learn / practice / stats / tools sections', () => {
     keyboardTab!.click();
     await settle(4);
     expect(container.querySelectorAll('.kbd-diagram__key').length).toBeGreaterThan(20);
+
+    const phoneTab = Array.from(container.querySelectorAll('[role="tab"]')).find(
+      (el) => el.textContent === 'Phone keyboard test',
+    ) as HTMLButtonElement | undefined;
+    expect(phoneTab).toBeTruthy();
+    phoneTab!.click();
+    await settle(2);
+    const phoneInput = container.querySelector('.tools__phone-input') as HTMLInputElement;
+    expect(phoneInput).toBeTruthy();
+    expect(phoneInput.autocomplete).toBe('off');
+    expect(phoneInput.getAttribute('autocapitalize')).toBe('off');
+    expect(container.textContent).toContain('Final units');
     expect(errors).toEqual([]);
     spy.mockRestore();
   });

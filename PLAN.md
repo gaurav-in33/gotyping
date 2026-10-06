@@ -1,5 +1,18 @@
 # PLAN — Step 1 (Foundation + TYPE)
 
+## October 2026 follow-up — Hindi phone input + keyboard guide
+
+- [x] Audit the current physical Hindi layout resolver and preserve it as the
+  only source for both physical-key and English-QWERTY phone mapping.
+- [x] Replace duplicate Type/Learn/Practice input handlers with one robust
+  `KeyboardInputReader` (beforeinput, input value diff, composition,
+  physical-input dedupe, hidden-input reset).
+- [x] Replace default tap-to-type on-screen keyboard with the shared,
+  display-only `KeyboardGuide`; add optional legacy tapping, global visibility,
+  Shift/finger cues, compact viewport behavior and Settings preview.
+- [x] Add Phone keyboard test tooling, jsdom regression tests, device guide,
+  layout-source audit notes, build/test verification and a review-only PR.
+
 ## Status of the step prompt
 `prompts/STEP-1.md` was **not** included in the upload (only STEP-2 and STEP-3 arrived).
 Step 1 scope below is derived from what STEP-2 and STEP-3 explicitly leave out, plus

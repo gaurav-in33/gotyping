@@ -33,11 +33,11 @@ Density: compact / comfortable / spacious. Width: centered / wide. Distraction-f
 1. Config summary pill (e.g. "time · 30 · english · punctuation off") → expands into grouped panel (Mode, Length, Language, Text options, Behavior). Collapses once typing starts.
 2. Text area (3 visible lines default, smooth scroll, caret).
 3. Optional live stats row (each stat toggleable).
-4. Optional on-screen keyboard with finger guide (toggle).
+4. Compact display-only keyboard guide with finger cues; global Show/Hide, with optional tap-to-type disabled by default.
 5. Restart control + hint. Nothing else.
 
 ## Components to build once and reuse
-Button, IconButton (inline SVG icon set, small and consistent), Segmented control, Toggle, Slider, Select, Field, Tabs, Sheet/Modal (sparingly), Toast, EmptyState, StatCard, ProgressBar, Chart (line, bar, calendar heat), Keyboard (layout renderer shared by on-screen keyboard, finger guide, heatmap, tester, layout reference).
+Button, IconButton (inline SVG icon set, small and consistent), Segmented control, Toggle, Slider, Select, Field, Tabs, Sheet/Modal (sparingly), Toast, EmptyState, StatCard, ProgressBar, Chart (line, bar, calendar heat), Keyboard (layout renderer shared by the keyboard guide, finger guide, heatmap, tester, layout reference).
 
 ## States
 Every screen needs: loading (skeleton, not spinner walls), empty (helpful sentence + one action), error (plain language + retry). Provide them; do not leave blanks.

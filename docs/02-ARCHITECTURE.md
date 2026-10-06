@@ -19,7 +19,7 @@ Deploy: Vercel static (`npm run build` → `dist/`), `vercel.json` with SPA rewr
     progress/           xp.ts, levels.ts, streaks.ts, achievements.ts, challenges.ts
   content/              words-*.json, quotes.json, curriculum.ts, themes.json, achievements.json (lazy per language)
   store/                settings.ts (localStorage, versioned+migrations), db.ts (IndexedDB), history.ts, aggregates.ts, backup.ts (export/import+validation)
-  ui/                   shell/, components/, charts/, keyboard/ (on-screen keyboard, finger guide, heatmap), theme/ (apply tokens, builder)
+  ui/                   shell/, components/, charts/, keyboard/ (display keyboard guide, finger guide, heatmap), theme/ (apply tokens, builder)
   features/             type/, learn/, practice/, stats/, tools/, challenges/, settings/   (each lazy-loaded)
   styles/               tokens.css, base.css, utilities.css
 /tests                  engine, metrics, layouts, adaptive, store, backup

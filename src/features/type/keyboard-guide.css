@@ -1,0 +1,134 @@
+.keyboard-guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.keyboard-guide__head,
+.keyboard-guide__bottom {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.keyboard-guide__head {
+  min-height: 30px;
+}
+
+.keyboard-guide__name,
+.keyboard-guide__legend {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.keyboard-guide__body {
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+}
+
+.keyboard-guide__body .kbd-diagram {
+  padding: 0;
+}
+
+.keyboard-guide__body .kbd-diagram__key {
+  position: relative;
+  cursor: default;
+  transition: background-color var(--motion-fast) linear, border-color var(--motion-fast) linear;
+}
+
+.keyboard-guide__body button.kbd-diagram__key {
+  cursor: pointer;
+}
+
+.keyboard-guide__body--no-labels .kbd-diagram__glyph,
+.keyboard-guide__body--no-labels .kbd-diagram__sub {
+  visibility: hidden;
+}
+
+.keyboard-guide__bottom {
+  justify-content: space-between;
+  margin-top: var(--s1);
+}
+
+.keyboard-guide__shift {
+  min-width: 68px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.keyboard-guide__shift--next,
+.keyboard-guide .kbd-diagram__key--next {
+  background: var(--guide-finger, var(--accent));
+  border-color: var(--guide-finger, var(--accent));
+  color: var(--onAccent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--guide-finger, var(--accent)) 35%, transparent);
+}
+
+/* One consistent colour per finger. The next key uses its assigned colour,
+   making the finger cue visible without requiring a second diagram. */
+.keyboard-guide__key--finger-l-pinky { --guide-finger: #c26752; }
+.keyboard-guide__key--finger-l-ring { --guide-finger: #bd8a35; }
+.keyboard-guide__key--finger-l-middle { --guide-finger: #819d35; }
+.keyboard-guide__key--finger-l-index { --guide-finger: #3c9a72; }
+.keyboard-guide__key--finger-thumb { --guide-finger: #438eaf; }
+.keyboard-guide__key--finger-r-index { --guide-finger: #4b77b8; }
+.keyboard-guide__key--finger-r-middle { --guide-finger: #7a68b5; }
+.keyboard-guide__key--finger-r-ring { --guide-finger: #9a5ea8; }
+.keyboard-guide__key--finger-r-pinky { --guide-finger: #b85f83; }
+
+.keyboard-guide--compact {
+  gap: 2px;
+}
+
+.keyboard-guide--compact .keyboard-guide__body {
+  padding: 3px var(--s2);
+}
+
+.keyboard-guide--compact .kbd-diagram {
+  --kbd-key-size: 25px;
+  --kbd-key-unit: 27px;
+  --kbd-gap: 3px;
+}
+
+.keyboard-guide--compact .kbd-diagram__key {
+  border-radius: 4px;
+  font-size: 0.67rem;
+}
+
+.keyboard-guide--compact .kbd-diagram__sub {
+  font-size: 0.43rem;
+}
+
+.keyboard-guide--compact .keyboard-guide__bottom {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .keyboard-guide__body {
+    padding-inline: var(--s2);
+  }
+
+  .keyboard-guide .kbd-diagram {
+    --kbd-key-size: 27px;
+    --kbd-key-unit: 29px;
+    --kbd-gap: 3px;
+  }
+
+  .keyboard-guide .kbd-diagram__key {
+    font-size: 0.7rem;
+  }
+
+  .keyboard-guide .kbd-diagram__sub {
+    font-size: 0.43rem;
+  }
+}

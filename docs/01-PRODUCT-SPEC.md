@@ -49,9 +49,9 @@ English, Hindi, Hinglish. Language packs are data (words, quotes, layouts, lesso
 ## 9. Settings (center with progressive disclosure)
 Typing · Display · Motion · Keyboard · Language · Practice · Accessibility · Themes · Data · Privacy · About. (No Sound category in this version.) Each category: common options first, "Show advanced" for the rest. Full list in `docs/03` (appearance) and below:
 - Typing: default mode/time/words, punctuation, numbers, capitalization, stop on error, backspace, skip behavior, auto restart, caret behavior, Tab-restarts-test (default off).
-- Display: font, size, text width, line height, letter spacing, text weight, cursor style/animation/width, alignment, text opacity, typed/untyped/error appearance, smooth scroll, keyboard visibility, stats visibility (WPM, accuracy, errors, timer, progress, word count), layout density, focus mode, distraction-free.
+- Display: font, size, text width, line height, letter spacing, text weight, cursor style/animation/width, alignment, text opacity, typed/untyped/error appearance, smooth scroll, guide visibility, stats visibility (WPM, accuracy, errors, timer, progress, word count), layout density, focus mode, distraction-free.
 - Motion: animations, transitions, reduced motion, effects.
-- Keyboard: physical layout (QWERTY default; others data-driven), on-screen keyboard, finger guide, key highlighting, key labels, Hindi layout.
+- Keyboard: physical layout (QWERTY default; others data-driven), display-only keyboard guide (global Show/Hide; optional tap-to-type is off by default), finger guide, key highlighting, key labels, Hindi layout.
 - Language: default language, per-language options, Hindi layout.
 - Practice: difficulty, adaptive on/off, target WPM, target accuracy, session length.
 - Accessibility: high contrast, reduced motion, larger text, keyboard navigation, focus visibility, screen-reader labels.

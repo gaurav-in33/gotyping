@@ -106,7 +106,7 @@ no OS-shipped keyboard driver to cross-check against. Community sources found:
 
 **What shipped:** only the digit row (`Digit0`–`Digit9` → plain ASCII `0`–`9`), which every
 source agrees on, all flagged `verified: false` anyway out of caution. Every other key is
-left unmapped (blank on the on-screen keyboard and in the Keyboard tester) rather than
+left unmapped (blank on the display keyboard guide and in the Keyboard tester) rather than
 guessed. The on-screen Beta note and the Settings hint say this explicitly, and Remington is
 not offered as a layout for live Learn/Type Hindi sessions yet — only as a reference entry in
 Settings and the Keyboard tester — so nobody can accidentally practise a wrong mapping.
@@ -169,6 +169,40 @@ an OS or IME vendor (the same kind of primary source that made InScript shippabl
 again whenever one surfaces — the `data/remington-beta.json` + `REMINGTON` layout structures
 already exist and are ready to receive more verified keys without any code changes.
 
+## English-QWERTY phone input → Hindi layout table (October 2026)
+
+GoTyping's Hindi phone path does **not** introduce another Hindi mapping. On
+Android Gboard/iOS an English-QWERTY soft keyboard supplies a character
+(`beforeinput.data` or an `input` value delta), not a usable physical
+`KeyboardEvent.code`. `KeyboardInputReader` reconstructs that QWERTY physical
+key from the verified `QWERTY` geometry table and passes it to the existing
+`LayoutResolver`. The resolver then reads the same `INSCRIPT`/`REMINGTON`
+`KeyCap.normal` or `KeyCap.shift` value used for USB/Bluetooth keyboard
+`keydown` input.
+
+Examples for the selected InScript table: raw `k` → `KeyK` normal → **क**;
+raw `K` → `KeyK` Shift → **ख**; raw `e` → `KeyE` normal → **ा**. QWERTY
+digits and punctuation follow the same rule, including raw `1` → `Digit1` →
+**१** and raw `>` → Shift+`Period` → **।**. This behavior inherits the
+per-key verification/Beta status documented above; it does not claim to make
+the fourteen disputed keys more certain.
+
+If the input is already Devanagari (for example, the owner switches Gboard to
+a Hindi layout), GoTyping accepts its Unicode units directly and does not map
+them through QWERTY again. That protects an IME result such as **का** from
+becoming a different sequence. Non-Devanagari characters with no English
+QWERTY physical key are ignored in Hindi mode rather than leaking Latin text
+into a typing test.
+
+Android often sends `key="Unidentified"` / legacy keyCode 229 before real
+input data. The reader therefore treats `beforeinput` as preferred, uses
+`input` as a value-diff fallback, defers composition drafts until
+`compositionend`, and suppresses the following commit echo. A handled
+physical `keydown` arms a one-event guard so its companion `input` event
+cannot count twice. `Tools → Phone keyboard test` exposes these raw events on
+a real device; see `docs/TEST-ON-DEVICE.md` for the Gboard setup and exact
+acceptance checks.
+
 ## Engine-level Devanagari correctness (independently verified)
 
 Independently of the key tables, the typing engine handles Devanagari text correctly:
@@ -191,7 +225,7 @@ These are safe to mark `verified: true` on a much lower bar than the Hindi layou
 structural reason, not a documentation one: `core/layouts/resolver.ts` **trusts
 `KeyboardEvent.key` for Latin scripts** — the OS has already applied whatever physical layout is
 actually installed before the browser sees the event. So this table is never consulted to
-decide what a keystroke produces; it only drives what the on-screen keyboard, finger guide and
+decide what a keystroke produces; it only drives what the display keyboard guide, finger guide and
 Stats heatmap *draw* for someone who tells Settings they type on one of these layouts. A wrong
 cell here would misdraw a picture, not mis-score a single keystroke — a fundamentally smaller
 blast radius than the Hindi tables, where the same file *does* decide the typed character

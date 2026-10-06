@@ -410,3 +410,27 @@ details.disclosure[open] > summary::before {
     gap: var(--s4);
   }
 }
+
+/* A phone keyboard reduces visualViewport rather than the layout viewport.
+   Keep two lines of target text and a compact guide in the remaining space. */
+@media (max-height: 620px) {
+  .type {
+    gap: var(--s2);
+  }
+
+  .type .config[data-hidden='true'] {
+    display: none;
+  }
+
+  .type .text {
+    --visible-lines: 2 !important;
+  }
+
+  .type .livestats {
+    min-height: 1.4rem;
+  }
+
+  .type .livestats__value {
+    font-size: 1rem;
+  }
+}
