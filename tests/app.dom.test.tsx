@@ -107,7 +107,7 @@ describe('app shell', () => {
     const links = Array.from(container.querySelectorAll('.topbar__nav a')).map(
       (a) => a.textContent,
     );
-    expect(links).toEqual(['Type', 'Learn', 'Practice', 'Stats', 'Tools', 'Settings']);
+    expect(links).toEqual(['Type', 'Learn', 'Practice', 'Stats', 'Tools', 'Challenges', 'Settings']);
     expect(errors).toEqual([]);
     spy.mockRestore();
   });
@@ -157,9 +157,9 @@ describe('app shell', () => {
       (a) => a.textContent === 'Tools',
     ) as HTMLAnchorElement;
     toolsLink.click();
-    await waitFor('.tools');
+    await waitFor('.tools-screen');
     await settle(4);
-    expect(container.textContent).toContain('Keyboard tester');
+    expect(container.textContent).toContain('Typing utilities');
     // The sheet closes itself after navigating.
     expect(container.querySelector('.bottombar__sheet')).toBeFalsy();
 
@@ -269,6 +269,86 @@ describe('type screen', () => {
     await settle();
     expect(container.querySelector('.config__panel')).toBeTruthy();
   });
+
+  it('fun modes (docs/01 §7) can be switched without crashing and still render text', async () => {
+    const errors: unknown[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
+    await mountApp();
+    await waitFor('.config__pill');
+
+    (container.querySelector('.config__pill') as HTMLButtonElement).click();
+    await settle();
+
+    const group = Array.from(container.querySelectorAll('.config__group')).find((g) =>
+      g.querySelector('.config__label')?.textContent?.includes('More modes'),
+    );
+    expect(group).toBeTruthy();
+
+    for (const label of ['Blind', 'Random capitalization', 'Sudden death', 'Memory', 'Ghost race']) {
+      const btn = Array.from(group!.querySelectorAll('button')).find((b) => b.textContent === label) as
+        | HTMLButtonElement
+        | undefined;
+      expect(btn).toBeTruthy();
+      btn!.click();
+      await settle(3);
+      await waitFor('.u');
+      expect(container.querySelectorAll('.u').length).toBeGreaterThan(0);
+    }
+
+    expect(errors).toEqual([]);
+    spy.mockRestore();
+  });
+
+  it('on-screen keyboard (docs/01 §9) highlights the next key and tap-to-type feeds it', async () => {
+    const { settingsStore } = await import('../src/store/settings');
+    settingsStore.update((d) => {
+      d.display.showKeyboard = true;
+      d.keyboard.highlightNextKey = true;
+    });
+
+    await mountApp();
+    await waitFor('.u');
+    await waitFor('.onscreen-kb');
+
+    // The engine's tick drives the highlight, same cadence as live stats.
+    await settle(10);
+    const lit = container.querySelector('.kbd-diagram__key--next') as HTMLButtonElement | null;
+    expect(lit).toBeTruthy();
+
+    const first = container.querySelector('.u')!.textContent!;
+    const key = Array.from(container.querySelectorAll('.kbd-diagram__key')).find(
+      (b) => (b as HTMLButtonElement).dataset.code && b.querySelector('.kbd-diagram__glyph')?.textContent === first,
+    ) as HTMLButtonElement | undefined;
+    expect(key).toBeTruthy();
+
+    key!.click();
+    await settle(2);
+    expect(container.querySelector('.u')!.className).toContain('u--ok');
+  });
+
+  it('on-screen keyboard also drives Hindi (InScript) typing via tap-to-type', async () => {
+    const { settingsStore } = await import('../src/store/settings');
+    settingsStore.update((d) => {
+      d.display.showKeyboard = true;
+      d.language.current = 'hi';
+      d.keyboard.hindiLayout = 'inscript';
+    });
+
+    await mountApp();
+    await waitFor('.u');
+    await waitFor('.onscreen-kb');
+    await settle(10);
+
+    const first = container.querySelector('.u')!.textContent!;
+    const key = Array.from(container.querySelectorAll('.kbd-diagram__key')).find(
+      (b) => b.querySelector('.kbd-diagram__glyph')?.textContent === first,
+    ) as HTMLButtonElement | undefined;
+    expect(key).toBeTruthy();
+
+    key!.click();
+    await settle(2);
+    expect(container.querySelector('.u')!.className).toContain('u--ok');
+  });
 });
 
 describe('settings screen', () => {
@@ -296,6 +376,32 @@ describe('settings screen', () => {
     expect(settingsStore.get().typing.stopOnError).toBe(!before);
     // and it is persisted
     expect(localStorage.getItem('gotyping:settings')).toContain('stopOnError');
+  });
+
+  it('exposes on-screen keyboard / finger guide toggles under "Show advanced"', async () => {
+    const { navigate } = await import('../src/router');
+    const { settingsStore } = await import('../src/store/settings');
+
+    await mountApp();
+    navigate('/settings');
+    await waitFor('.settings');
+
+    const details = Array.from(container.querySelectorAll('details')).find((d) =>
+      d.textContent?.includes('On-screen keyboard'),
+    ) as HTMLDetailsElement | undefined;
+    expect(details).toBeTruthy();
+    details!.open = true;
+    await settle();
+
+    const before = settingsStore.get().display.showKeyboard;
+    const toggle = Array.from(container.querySelectorAll('[role="switch"]')).find(
+      (el) => el.getAttribute('aria-label') === 'On-screen keyboard',
+    ) as HTMLButtonElement | undefined;
+    expect(toggle).toBeTruthy();
+
+    toggle!.click();
+    await settle();
+    expect(settingsStore.get().display.showKeyboard).toBe(!before);
   });
 
   it('shows the Beta badge for the unverified Hindi layout', async () => {
@@ -365,9 +471,16 @@ describe('learn / practice / stats / tools sections', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
     await mountApp();
     navigate('/tools');
-    await waitFor('.tools');
+    await waitFor('.tools-screen');
     await settle(4);
-    expect(container.textContent).toContain('Keyboard tester');
+    expect(container.textContent).toContain('Typing utilities');
+
+    const keyboardTab = Array.from(container.querySelectorAll('[role="tab"]')).find(
+      (el) => el.textContent === 'Keyboard',
+    ) as HTMLButtonElement | undefined;
+    expect(keyboardTab).toBeTruthy();
+    keyboardTab!.click();
+    await settle(4);
     expect(container.querySelectorAll('.kbd-diagram__key').length).toBeGreaterThan(20);
     expect(errors).toEqual([]);
     spy.mockRestore();

@@ -1,18 +1,23 @@
+import { useMemo } from 'preact/hooks';
 import { FINGER_LABEL, fingerForCode } from '../../core/layouts/fingers';
-import { reverseIndex, QWERTY } from '../../core/layouts/qwerty';
+import { reverseIndex, QWERTY, type PhysicalLayout } from '../../core/layouts/qwerty';
 
-const qwertyReverse = reverseIndex(QWERTY);
+/**
+ * Small, original finger-assignment reference for a lesson's key set.
+ * Takes the active physical layout so it stays correct for Colemak/Dvorak
+ * and Hindi lessons, not just QWERTY (Step 3) — reuses the same
+ * `reverseIndex` the Keyboard tester and on-screen keyboard rely on.
+ */
+export function FingerGuide({ keys, layout = QWERTY }: { keys: string[]; layout?: PhysicalLayout }) {
+  const reverse = useMemo(() => reverseIndex(layout), [layout]);
 
-/** Which finger types a given lowercase Latin character, home-row QWERTY. */
-function fingerForChar(ch: string): string | null {
-  const phys = qwertyReverse.get(ch.toLowerCase());
-  if (!phys) return null;
-  const f = fingerForCode(phys.code);
-  return f ? FINGER_LABEL[f] : null;
-}
+  const fingerForChar = (ch: string): string | null => {
+    const phys = reverse.get(layout.script === 'devanagari' ? ch : ch.toLowerCase());
+    if (!phys) return null;
+    const f = fingerForCode(phys.code);
+    return f ? FINGER_LABEL[f] : null;
+  };
 
-/** Small, original finger-assignment reference for a lesson's key set. */
-export function FingerGuide({ keys }: { keys: string[] }) {
   if (keys.length === 0) return null;
   const rows = keys
     .map((k) => ({ key: k, finger: fingerForChar(k) }))

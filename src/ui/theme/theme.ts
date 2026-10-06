@@ -40,11 +40,17 @@ export function prefersDark(): boolean {
   return matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
+/** Presets plus whatever the user built in Settings > Themes > Custom theme builder. */
+export function allThemes(settings: Settings): Theme[] {
+  return [...THEMES, ...settings.theme.customThemes];
+}
+
 /** Resolve which preset to show for the current appearance setting. */
 export function resolveTheme(settings: Settings): Theme {
   const { appearance, lightTheme, darkTheme } = settings.theme;
+  const byId = Object.fromEntries(allThemes(settings).map((t) => [t.id, t]));
   const pick = (id: string, fallback: string): Theme =>
-    THEMES_BY_ID[id] ?? THEMES_BY_ID[fallback] ?? THEMES[0]!;
+    byId[id] ?? THEMES_BY_ID[fallback] ?? THEMES[0]!;
 
   let mode: AppearanceMode = appearance;
   if (mode === 'system') mode = prefersDark() ? 'dark' : 'light';
@@ -111,6 +117,9 @@ export function applyDisplaySettings(s: Settings): void {
   root.style.setProperty('--content-width', WIDTHS[d.textWidth] ?? WIDTHS['medium']!);
   root.style.setProperty('--density', DENSITY[d.density] ?? '1');
   root.style.setProperty('--root-scale', s.a11y.largerText ? '1.15' : '1');
+  root.style.setProperty('--typing-align', d.textAlign === 'left' ? 'left' : 'center');
+  root.style.setProperty('--typing-untyped-opacity', String(Math.max(20, d.textOpacity) / 100));
+  root.style.setProperty('--typing-scroll', d.smoothScroll ? 'smooth' : 'auto');
 
   const reduce = s.motion.reducedMotion || !s.motion.animations;
   root.dataset['reducedMotion'] = reduce ? 'true' : 'false';
@@ -137,4 +146,37 @@ export function contrastRatio(a: string, b: string): number {
   const light = Math.max(la, lb);
   const dark = Math.min(la, lb);
   return (light + 0.05) / (dark + 0.05);
+}
+
+/** WCAG AA for normal text. The typing text is large, but we hold the stricter bar on purpose. */
+export const WCAG_AA_NORMAL = 4.5;
+
+export interface ContrastWarning {
+  pair: string;
+  ratio: number;
+}
+
+/**
+ * Check the token pairs that actually carry readable text against WCAG AA.
+ * Used by the custom theme builder (docs/03) so a user cannot save a theme
+ * that is quietly unreadable.
+ */
+export function contrastWarnings(tokens: Record<string, string>): ContrastWarning[] {
+  const pairs: Array<[string, string, string]> = [
+    ['text vs background', 'text', 'bg'],
+    ['typed vs background', 'typed', 'bg'],
+    ['untyped vs background', 'untyped', 'bg'],
+    ['error vs background', 'error', 'bg'],
+    ['onAccent vs accent', 'onAccent', 'accent'],
+    ['muted vs background', 'muted', 'bg'],
+  ];
+  const warnings: ContrastWarning[] = [];
+  for (const [label, a, b] of pairs) {
+    const ca = tokens[a];
+    const cb = tokens[b];
+    if (!ca || !cb) continue;
+    const ratio = contrastRatio(ca, cb);
+    if (ratio < WCAG_AA_NORMAL) warnings.push({ pair: label, ratio: Math.round(ratio * 100) / 100 });
+  }
+  return warnings;
 }

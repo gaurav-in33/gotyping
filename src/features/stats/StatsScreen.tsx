@@ -64,6 +64,7 @@ export default function StatsScreen() {
   const langs = [...new Set(tests.map((t) => t.lang))];
   const modes = [...new Set(tests.map((t) => t.mode))];
   const durations = [...new Set(tests.map((t) => t.duration))].sort((a, b) => a - b);
+  const lessons = [...new Set(tests.map((t) => t.lessonId).filter((l): l is string => !!l))];
 
   if (tests.length === 0) {
     return (
@@ -146,7 +147,25 @@ export default function StatsScreen() {
             </option>
           ))}
         </select>
-        {(filter.lang || filter.mode || filter.duration !== undefined) && (
+        {lessons.length > 0 ? (
+          <select
+            class="btn btn--sm"
+            aria-label="Filter by lesson"
+            value={filter.lessonId ?? ''}
+            onChange={(e) => {
+              const v = (e.target as HTMLSelectElement).value;
+              setFilter((f) => ({ ...f, lessonId: v || undefined }));
+            }}
+          >
+            <option value="">All lessons</option>
+            {lessons.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        {(filter.lang || filter.mode || filter.duration !== undefined || filter.lessonId) && (
           <button class="btn btn--ghost btn--sm" type="button" onClick={() => setFilter({})}>
             Clear filters
           </button>

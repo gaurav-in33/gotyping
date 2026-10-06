@@ -7,6 +7,7 @@ import { buildLessonText } from '../../core/text/lessons';
 import { loadLanguage, type LanguagePack } from '../../content';
 import { isFunctional, layoutById } from '../../core/layouts/hindi';
 import { QWERTY } from '../../core/layouts/qwerty';
+import { layoutByAnyId } from '../../core/layouts/registry';
 import { useSettings } from '../../ui/useSettings';
 import { TypingBox } from '../type/TypingBox';
 import { Result } from '../type/Result';
@@ -18,6 +19,8 @@ import { idb, STORES } from '../../store/db';
 import { emptyAggregates, type Aggregates, type TestRecord } from '../../store/types';
 import { lessonProgressRepo, passes } from '../../store/lessons';
 import { EASY_WORD_SHARE } from '../../store/settings';
+import { progressRepo } from '../../store/progress';
+import { xpForLesson } from '../../core/progress/xp';
 
 export function LessonView({ lessonId }: { lessonId: string }) {
   const [settings] = useSettings();
@@ -81,6 +84,7 @@ export function LessonView({ lessonId }: { lessonId: string }) {
   const onComplete = (m: Metrics, capture: readonly Capture[]): void => {
     const passed = passes(m.wpm, m.accuracy, lesson.targetWpm, lesson.targetAccuracy);
     setResult({ m, passed });
+    if (settings.practice.progression !== 'off') void progressRepo.addXp(xpForLesson(passed));
 
     void lessonProgressRepo.record(lesson.id, m.wpm, m.accuracy, passed);
 
@@ -171,7 +175,12 @@ export function LessonView({ lessonId }: { lessonId: string }) {
         </p>
       ) : (
         <>
-          <FingerGuide keys={keySet} />
+          {settings.keyboard.fingerGuide ? (
+            <FingerGuide
+              keys={keySet}
+              layout={useHindi ? hindiLayout : layoutByAnyId(settings.keyboard.physicalLayout)}
+            />
+          ) : null}
           <TypingBox
             text={generated.text}
             resetToken={attempt}

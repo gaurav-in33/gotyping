@@ -6,9 +6,10 @@
 import type { BackspaceMode } from '../core/engine/session';
 
 export const SETTINGS_KEY = 'gotyping:settings';
-export const SETTINGS_VERSION = 3;
+export const SETTINGS_VERSION = 4;
 
 export type PracticeDifficulty = 'easy' | 'normal' | 'hard';
+export type ProgressionMode = 'full' | 'minimal' | 'off';
 
 /**
  * Share of generic "easy / rhythm" filler words mixed into adaptive Practice
@@ -28,6 +29,15 @@ export type TextWidth = 'narrow' | 'medium' | 'wide' | 'full';
 export type CaretStyle = 'line' | 'block' | 'underline' | 'off';
 export type FontChoice = 'mono' | 'sans' | 'serif';
 export type LanguageId = 'en' | 'hi' | 'hinglish';
+export type TextAlign = 'left' | 'center';
+
+/** A user-authored theme, edited in Settings > Themes > Custom theme builder. */
+export interface CustomTheme {
+  id: string;
+  name: string;
+  mode: 'light' | 'dark';
+  tokens: Record<string, string>;
+}
 
 export interface Settings {
   v: number;
@@ -57,12 +67,16 @@ export interface Settings {
     density: Density;
     focusMode: boolean;
     showKeyboard: boolean;
+    textAlign: TextAlign;
+    textOpacity: number;
+    smoothScroll: boolean;
     liveStats: {
       wpm: boolean;
       accuracy: boolean;
       errors: boolean;
       timer: boolean;
       progress: boolean;
+      words: boolean;
     };
   };
   motion: {
@@ -88,6 +102,7 @@ export interface Settings {
     appearance: AppearanceMode;
     lightTheme: string;
     darkTheme: string;
+    customThemes: CustomTheme[];
   };
   practice: {
     difficulty: PracticeDifficulty;
@@ -95,6 +110,7 @@ export interface Settings {
     targetWpm: number;
     targetAccuracy: number;
     sessionSeconds: number;
+    progression: ProgressionMode;
   };
   data: {
     historyCap: number;
@@ -129,7 +145,10 @@ export const defaultSettings: Settings = {
     density: 'comfortable',
     focusMode: true,
     showKeyboard: false,
-    liveStats: { wpm: true, accuracy: true, errors: false, timer: true, progress: true },
+    textAlign: 'center',
+    textOpacity: 100,
+    smoothScroll: true,
+    liveStats: { wpm: true, accuracy: true, errors: false, timer: true, progress: true, words: false },
   },
   motion: { animations: true, reducedMotion: false },
   keyboard: {
@@ -141,13 +160,14 @@ export const defaultSettings: Settings = {
   },
   language: { current: 'en' },
   a11y: { highContrast: false, largerText: false, focusVisible: true },
-  theme: { appearance: 'system', lightTheme: 'paper', darkTheme: 'graphite' },
+  theme: { appearance: 'system', lightTheme: 'paper', darkTheme: 'graphite', customThemes: [] },
   practice: {
     difficulty: 'normal',
     adaptive: true,
     targetWpm: 40,
     targetAccuracy: 95,
     sessionSeconds: 60,
+    progression: 'full',
   },
   data: { historyCap: 5000 },
 };
@@ -210,6 +230,31 @@ export const migrations: Record<number, Migration> = {
       };
     }
     s['v'] = 3;
+    return s;
+  },
+  /**
+   * v3 -> v4: Step 3 adds Progression, the custom theme builder and a few
+   * more Display controls (docs/01 sections 5 and 9).
+   */
+  3: (s) => {
+    const practice = (s['practice'] as Record<string, unknown> | undefined) ?? {};
+    if (!('progression' in practice)) practice['progression'] = 'full';
+    s['practice'] = practice;
+
+    const theme = (s['theme'] as Record<string, unknown> | undefined) ?? {};
+    if (!('customThemes' in theme)) theme['customThemes'] = [];
+    s['theme'] = theme;
+
+    const display = (s['display'] as Record<string, unknown> | undefined) ?? {};
+    if (!('textAlign' in display)) display['textAlign'] = 'center';
+    if (!('textOpacity' in display)) display['textOpacity'] = 100;
+    if (!('smoothScroll' in display)) display['smoothScroll'] = true;
+    const live = (display['liveStats'] as Record<string, unknown> | undefined) ?? {};
+    if (!('words' in live)) live['words'] = false;
+    display['liveStats'] = live;
+    s['display'] = display;
+
+    s['v'] = 4;
     return s;
   },
 };

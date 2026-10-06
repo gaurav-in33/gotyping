@@ -1,3 +1,9 @@
+.tools-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
 .tools {
   display: flex;
   flex-direction: column;
@@ -24,4 +30,106 @@
 .tools__readout-glyph {
   font-size: 1.6rem;
   font-weight: 700;
+}
+
+.calc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+}
+
+.calc h3 {
+  margin: 0;
+}
+
+.calc__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+.calc__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.calc__field input {
+  padding: var(--s2);
+  border-radius: var(--r-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  width: 9rem;
+}
+
+.calc__result {
+  display: flex;
+  gap: var(--s4);
+  font-size: 1rem;
+}
+
+.calc__result strong {
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+.calc__textarea {
+  width: 100%;
+  padding: var(--s3);
+  border-radius: var(--r-control);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--typing-font, monospace);
+  resize: vertical;
+}
+
+.calc__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--s2);
+  font-size: 0.85rem;
+}
+
+.calc__grid strong {
+  color: var(--accent);
+  font-size: 1.1rem;
+  display: block;
+}
+
+.pomo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s4);
+  border-radius: var(--r-panel);
+  background: var(--panel);
+}
+
+.pomo__phase {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.pomo[data-phase='break'] .pomo__phase {
+  color: var(--accent);
+}
+
+.pomo__clock {
+  font-size: 2.2rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.tools__tabpanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
 }

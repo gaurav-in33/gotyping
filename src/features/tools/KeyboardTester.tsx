@@ -1,19 +1,26 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { KeyboardDiagram } from '../../ui/components/KeyboardDiagram';
 import { QWERTY, type KeyCap } from '../../core/layouts/qwerty';
-import { HINDI_LAYOUTS, layoutById } from '../../core/layouts/hindi';
+import { ALL_LAYOUTS } from '../../core/layouts/registry';
 import './tools.css';
 
-const LAYOUTS = [QWERTY, ...HINDI_LAYOUTS];
-
-export default function KeyboardTester() {
-  const [layoutId, setLayoutId] = useState(QWERTY.id);
+/**
+ * Keyboard tester / layout reference (docs/01 Tools > Keyboard tools, and
+ * docs/06 rule 5's "layout test page"). One implementation, shared by the
+ * general Keyboard tab and the Hindi tab (which just preselects a layout).
+ */
+export function KeyboardTesterPanel({ initialLayoutId }: { initialLayoutId?: string }) {
+  const [layoutId, setLayoutId] = useState(initialLayoutId ?? QWERTY.id);
   const [pressed, setPressed] = useState<string | null>(null);
   const [shiftDown, setShiftDown] = useState(false);
   const [lastTyped, setLastTyped] = useState<KeyCap | null>(null);
 
-  const layout = useMemo(() => layoutById(layoutId), [layoutId]);
-  const list = LAYOUTS;
+  useEffect(() => {
+    if (initialLayoutId) setLayoutId(initialLayoutId);
+  }, [initialLayoutId]);
+
+  const list = ALL_LAYOUTS;
+  const layout = useMemo(() => list.find((l) => l.id === layoutId) ?? QWERTY, [layoutId]);
 
   useEffect(() => {
     const byCode = new Map<string, KeyCap>();
@@ -41,11 +48,6 @@ export default function KeyboardTester() {
 
   return (
     <div class="tools">
-      <div class="page-head">
-        <h1>Tools</h1>
-        <p>Keyboard tester — press any key to see what it produces on each layout.</p>
-      </div>
-
       <div class="field">
         <div class="field__text">
           <span class="field__label">Layout</span>

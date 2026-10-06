@@ -1,0 +1,19 @@
+.onscreen-kb {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3) 0;
+}
+
+.kbd-diagram__key--next {
+  background: var(--accent);
+  color: var(--onAccent);
+  border-color: var(--accent);
+}
+
+/* Settings > Keyboard > "Key labels" off: a blanker board for drilling
+   muscle memory instead of reading each glyph. */
+.onscreen-kb--no-labels .kbd-diagram__glyph,
+.onscreen-kb--no-labels .kbd-diagram__sub {
+  visibility: hidden;
+}

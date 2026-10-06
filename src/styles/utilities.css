@@ -266,7 +266,8 @@
   color: var(--text);
 }
 
-.segmented button[aria-pressed='true'] {
+.segmented button[aria-pressed='true'],
+.segmented button[aria-selected='true'] {
   background: var(--panel);
   color: var(--text);
   box-shadow: var(--shadow);
@@ -293,6 +294,11 @@
 
 .badge--beta {
   background: var(--error);
+  color: var(--onAccent);
+}
+
+.badge--done {
+  background: var(--accent);
   color: var(--onAccent);
 }
 
