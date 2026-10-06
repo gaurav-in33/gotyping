@@ -60,7 +60,15 @@ registerSection({
   path: '/tools',
   label: 'Tools',
   primary: false,
-  load: () => import('./features/tools/KeyboardTester'),
+  load: () => import('./features/tools/ToolsScreen'),
+});
+
+registerSection({
+  id: 'challenges',
+  path: '/challenges',
+  label: 'Challenges',
+  primary: false,
+  load: () => import('./features/challenges/ChallengesScreen'),
 });
 
 registerSection({

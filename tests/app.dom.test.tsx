@@ -14,6 +14,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'preact';
+import { settingsStore } from '../src/store/settings';
 
 // --- Browser APIs jsdom does not implement -------------------------------
 class RO {
@@ -76,6 +77,23 @@ async function waitFor(sel: string, timeoutMs = 4000): Promise<Element> {
   throw new Error(`timed out waiting for ${sel}`);
 }
 
+/**
+ * Wait for an arbitrary predicate over the DOM, e.g. "the text actually
+ * changed to the new language/style", not just "some .u elements exist".
+ * A fixed tick count (`settle(n)`) is not reliable across a multi-hop async
+ * chain (language pack load -> session rebuild -> renderer attach) whose
+ * timing varies with how loaded the machine is when the whole file runs
+ * together — this polls against a real timeout instead.
+ */
+async function waitForCondition(predicate: () => boolean, timeoutMs = 4000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  throw new Error('timed out waiting for condition');
+}
+
 function pressKey(el: Element, key: string, code = ''): void {
   el.dispatchEvent(
     new window.KeyboardEvent('keydown', { key, code, bubbles: true, cancelable: true }),
@@ -84,6 +102,13 @@ function pressKey(el: Element, key: string, code = ''): void {
 
 beforeEach(() => {
   localStorage.clear();
+  // `settingsStore` is a real in-memory singleton: it reads localStorage once
+  // at module load, so clearing localStorage alone does NOT undo a mutation
+  // a previous test made with `settingsStore.update(...)`. Without this reset
+  // settings leak forward between tests in declaration order and surface as
+  // intermittent, hard-to-reproduce failures in unrelated tests later in the
+  // file (root-caused this session — see CHANGELOG).
+  settingsStore.reset();
   container = document.createElement('div');
   container.id = 'app';
   document.body.appendChild(container);
@@ -107,7 +132,7 @@ describe('app shell', () => {
     const links = Array.from(container.querySelectorAll('.topbar__nav a')).map(
       (a) => a.textContent,
     );
-    expect(links).toEqual(['Type', 'Learn', 'Practice', 'Stats', 'Tools', 'Settings']);
+    expect(links).toEqual(['Type', 'Learn', 'Practice', 'Stats', 'Tools', 'Challenges', 'Settings']);
     expect(errors).toEqual([]);
     spy.mockRestore();
   });
@@ -157,9 +182,9 @@ describe('app shell', () => {
       (a) => a.textContent === 'Tools',
     ) as HTMLAnchorElement;
     toolsLink.click();
-    await waitFor('.tools');
+    await waitFor('.tools-screen');
     await settle(4);
-    expect(container.textContent).toContain('Keyboard tester');
+    expect(container.textContent).toContain('Typing utilities');
     // The sheet closes itself after navigating.
     expect(container.querySelector('.bottombar__sheet')).toBeFalsy();
 
@@ -269,6 +294,117 @@ describe('type screen', () => {
     await settle();
     expect(container.querySelector('.config__panel')).toBeTruthy();
   });
+
+  it('fun modes (docs/01 §7) can be switched without crashing and still render text', async () => {
+    const errors: unknown[] = [];
+    const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
+    await mountApp();
+    await waitFor('.config__pill');
+
+    (container.querySelector('.config__pill') as HTMLButtonElement).click();
+    await settle();
+
+    const group = Array.from(container.querySelectorAll('.config__group')).find((g) =>
+      g.querySelector('.config__label')?.textContent?.includes('More modes'),
+    );
+    expect(group).toBeTruthy();
+
+    for (const label of ['Blind', 'Random capitalization', 'Sudden death', 'Memory', 'Ghost race']) {
+      const btn = Array.from(group!.querySelectorAll('button')).find((b) => b.textContent === label) as
+        | HTMLButtonElement
+        | undefined;
+      expect(btn).toBeTruthy();
+      btn!.click();
+      await settle(3);
+      await waitFor('.u');
+      expect(container.querySelectorAll('.u').length).toBeGreaterThan(0);
+    }
+
+    expect(errors).toEqual([]);
+    spy.mockRestore();
+  });
+
+  it('"Code" fun mode (docs/01 §7) renders real code and offers a JavaScript/Python switch', async () => {
+    await mountApp();
+    await waitFor('.config__pill');
+
+    (container.querySelector('.config__pill') as HTMLButtonElement).click();
+    await settle();
+
+    const group = Array.from(container.querySelectorAll('.config__group')).find((g) =>
+      g.querySelector('.config__label')?.textContent?.includes('More modes'),
+    )!;
+    const codeBtn = Array.from(group.querySelectorAll('button')).find((b) => b.textContent === 'Code') as
+      | HTMLButtonElement
+      | undefined;
+    expect(codeBtn).toBeTruthy();
+
+    codeBtn!.click();
+    await waitFor('.u');
+
+    // The language switch only appears once Code is the active fun mode.
+    const jsBtn = Array.from(group.querySelectorAll('button')).find((b) => b.textContent === 'JavaScript') as
+      | HTMLButtonElement
+      | undefined;
+    const pyBtn = Array.from(group.querySelectorAll('button')).find((b) => b.textContent === 'Python') as
+      | HTMLButtonElement
+      | undefined;
+    expect(jsBtn).toBeTruthy();
+    expect(pyBtn).toBeTruthy();
+
+    const text = () => Array.from(container.querySelectorAll('.u')).map((s) => s.textContent).join('');
+    await waitForCondition(() => /function|const|class/.test(text()));
+
+    pyBtn!.click();
+    await waitForCondition(() => /def|lambda|range/.test(text()));
+  });
+
+  it('on-screen keyboard (docs/01 §9) highlights the next key and tap-to-type feeds it', async () => {
+    const { settingsStore } = await import('../src/store/settings');
+    settingsStore.update((d) => {
+      d.display.showKeyboard = true;
+      d.keyboard.highlightNextKey = true;
+    });
+
+    await mountApp();
+    await waitFor('.u');
+    await waitFor('.onscreen-kb');
+
+    // Set once at reset time (not only on the engine's tick), but still
+    // async relative to this click — poll rather than guess a tick count.
+    // Tap the *highlighted* key specifically (not "any key whose glyph
+    // matches"), since a Shift-only expected character never appears as a
+    // key's visible glyph, but is still the correct key to tap.
+    await waitForCondition(() => !!container.querySelector('.kbd-diagram__key--next'));
+    const key = container.querySelector('.kbd-diagram__key--next') as HTMLButtonElement;
+
+    key.click();
+    await waitForCondition(() => container.querySelector('.u')!.className.includes('u--ok'));
+  });
+
+  it('on-screen keyboard also drives Hindi (InScript) typing via tap-to-type', async () => {
+    const { settingsStore } = await import('../src/store/settings');
+    settingsStore.update((d) => {
+      d.display.showKeyboard = true;
+      d.language.current = 'hi';
+      d.keyboard.hindiLayout = 'inscript';
+    });
+
+    await mountApp();
+    await waitFor('.u');
+    await waitFor('.onscreen-kb');
+
+    // Poll rather than a fixed tick count: the Hindi word pack loads async,
+    // so the very first `.u` — and the key highlighted for it — can briefly
+    // still be mid-rebuild. Tap the highlighted key itself; some Hindi
+    // matras only exist in a key's Shift position and never appear as a
+    // key's visible glyph, so matching by displayed glyph text is wrong.
+    await waitForCondition(() => !!container.querySelector('.kbd-diagram__key--next'));
+    const key = container.querySelector('.kbd-diagram__key--next') as HTMLButtonElement;
+
+    key.click();
+    await waitForCondition(() => container.querySelector('.u')!.className.includes('u--ok'));
+  });
 });
 
 describe('settings screen', () => {
@@ -298,6 +434,32 @@ describe('settings screen', () => {
     expect(localStorage.getItem('gotyping:settings')).toContain('stopOnError');
   });
 
+  it('exposes on-screen keyboard / finger guide toggles under "Show advanced"', async () => {
+    const { navigate } = await import('../src/router');
+    const { settingsStore } = await import('../src/store/settings');
+
+    await mountApp();
+    navigate('/settings');
+    await waitFor('.settings');
+
+    const details = Array.from(container.querySelectorAll('details')).find((d) =>
+      d.textContent?.includes('On-screen keyboard'),
+    ) as HTMLDetailsElement | undefined;
+    expect(details).toBeTruthy();
+    details!.open = true;
+    await settle();
+
+    const before = settingsStore.get().display.showKeyboard;
+    const toggle = Array.from(container.querySelectorAll('[role="switch"]')).find(
+      (el) => el.getAttribute('aria-label') === 'On-screen keyboard',
+    ) as HTMLButtonElement | undefined;
+    expect(toggle).toBeTruthy();
+
+    toggle!.click();
+    await settle();
+    expect(settingsStore.get().display.showKeyboard).toBe(!before);
+  });
+
   it('shows the Beta badge for the unverified Hindi layout', async () => {
     const { navigate } = await import('../src/router');
     await mountApp();
@@ -308,7 +470,7 @@ describe('settings screen', () => {
 });
 
 describe('learn / practice / stats / tools sections', () => {
-  it('Learn renders the course home with no console errors', async () => {
+  it('Learn renders the course home as a tile grid with no console errors', async () => {
     const { navigate } = await import('../src/router');
     const errors: unknown[] = [];
     const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
@@ -318,8 +480,38 @@ describe('learn / practice / stats / tools sections', () => {
     await settle(4);
     expect(container.textContent).toContain('Learn');
     expect(container.querySelectorAll('.course-card').length).toBeGreaterThan(0);
+    // Lessons render as a grid of square tiles, not the old list rows.
+    expect(container.querySelectorAll('.lesson-grid').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.lesson-tile').length).toBeGreaterThan(20);
     expect(errors).toEqual([]);
     spy.mockRestore();
+  });
+
+  it('Learn: no lesson tile is locked — every tile is a real link, deep lessons are clickable', async () => {
+    const { navigate } = await import('../src/router');
+    await mountApp();
+    navigate('/learn');
+    await waitFor('.lesson-grid');
+    await settle(4);
+
+    const tiles = Array.from(container.querySelectorAll('a.lesson-tile')) as HTMLAnchorElement[];
+    expect(tiles.length).toBeGreaterThan(20);
+    for (const t of tiles) {
+      // The old lock logic set aria-disabled + data-locked and swallowed the
+      // click with e.preventDefault(); none of that should exist any more.
+      expect(t.getAttribute('aria-disabled')).toBeNull();
+      expect(t.getAttribute('data-locked')).toBeNull();
+      expect(t.getAttribute('href')).toMatch(/^\/learn\//);
+    }
+
+    // Deep-link a lesson far into its course that has never been attempted.
+    // Under the old lock logic this tile's click handler would call
+    // e.preventDefault() and the router's linkHandler would never fire.
+    const deepTile = tiles.find((t) => t.getAttribute('href') === '/learn/en-beginner-07');
+    expect(deepTile).toBeTruthy();
+    deepTile!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    await waitFor('.u', 6000);
+    expect(container.textContent).toContain('Index finger reach');
   });
 
   it('Learn lesson screen loads a lesson and renders typing text', async () => {
@@ -365,9 +557,16 @@ describe('learn / practice / stats / tools sections', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation((...a) => errors.push(a));
     await mountApp();
     navigate('/tools');
-    await waitFor('.tools');
+    await waitFor('.tools-screen');
     await settle(4);
-    expect(container.textContent).toContain('Keyboard tester');
+    expect(container.textContent).toContain('Typing utilities');
+
+    const keyboardTab = Array.from(container.querySelectorAll('[role="tab"]')).find(
+      (el) => el.textContent === 'Keyboard',
+    ) as HTMLButtonElement | undefined;
+    expect(keyboardTab).toBeTruthy();
+    keyboardTab!.click();
+    await settle(4);
     expect(container.querySelectorAll('.kbd-diagram__key').length).toBeGreaterThan(20);
     expect(errors).toEqual([]);
     spy.mockRestore();

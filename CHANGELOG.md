@@ -1,5 +1,151 @@
 # Changelog
 
+## Step 3 — Tools, theme builder, fun modes, offline mode, on-screen keyboard
+
+### Added
+
+**Tools (`docs/01` §6)** — all six categories from the spec, each its own tab
+in `ToolsScreen.tsx`:
+
+- **Typing utilities** — WPM/CPM/accuracy calculators, word and character
+  counters, text analyzer.
+- **Keyboard** — keyboard tester (press any physical key and see it light up
+  on a rendered diagram of the selected layout, with the mapped character,
+  Shift variant and a verified/unverified/unmapped state per key — shares
+  `KeyboardDiagram` with Stats' heatmap, one implementation, two callers), key
+  visualizer, finger-assignment guide, layout reference (heatmap itself stays
+  a Stats-only link, per spec).
+- **Text tools** — custom text generator, text cleaner/formatter, case
+  converter, punctuation helper, local paste-or-`.txt` text importer (nothing
+  ever uploaded).
+- **Hindi / Indian** — InScript and Remington keyboard reference, Unicode
+  notes, government-exam practice honestly labelled "exam-style, not
+  official".
+- **Productivity** — Pomodoro, session timer, practice goal timer.
+- **Remington (Gail) stayed Beta, by decision, not oversight.** It is mapped
+  only up to the digit row. A second, documented search pass this step (see
+  `docs/layout-sources.md` → "Step 3 revisit") checked a CRPF exam PDF, two
+  typing-tutor sites already on file, and one new site
+  (`smarttypingsolution.com`); none produced an authoritative, independently
+  checkable full key chart. Remington keeps `verified: false` and is excluded
+  from live Hindi Learn/Type sessions by `isFunctional()`'s ≥20-key threshold;
+  Settings shows its Beta status and the reason explicitly.
+- **KrutiDev ↔ Unicode converter was not shipped.** No reliable, checkable
+  mapping table was found (`docs/layout-sources.md`). Per `docs/06` and the
+  owner's explicit instruction, nothing invented ships in its place.
+
+**Settings**
+
+- "Show advanced" progressive disclosure on every settings category (a
+  `<details>` block), so the default view stays short while power users can
+  still reach every knob.
+- Custom theme builder (`ThemeBuilder.tsx`) — build a theme from scratch and
+  save it into `settings.theme.customThemes`, where it is picked up by the
+  same `allThemes()` used for the 10 built-in themes.
+- A progression-visibility setting that removes XP, levels, streaks,
+  Challenges and every gamification element when turned off.
+- New Keyboard/Display toggles actually wired to behaviour this step (they
+  existed in the settings schema before but had no UI control and no reading
+  code): **On-screen keyboard**, **Highlight next key**, **Key labels**,
+  **Finger guide** — under Settings → Language and keyboard → Show advanced.
+
+**On-screen keyboard**
+
+- `src/features/type/OnScreenKeyboard.tsx` — renders under the Type screen's
+  input when Settings → "On-screen keyboard" is on. Reuses the same
+  `KeyboardDiagram` as the keyboard tester and heatmap. Lights up the next
+  expected key when "Highlight next key" is on, can hide glyphs entirely when
+  "Key labels" is off (for drilling recall instead of reading), and supports
+  tap-to-type for touch users (taps feed the engine the same way a keystroke
+  does).
+- `src/core/layouts/registry.ts` — new `ALL_LAYOUTS` / `layoutByAnyId()`,
+  a single place that resolves a settings layout id to its table, now shared
+  by the Keyboard tester, the on-screen keyboard and the Learn finger guide
+  instead of three separate lookups.
+- Fixed a real bug while building this: `FingerGuide` was hardcoded to QWERTY
+  regardless of the lesson's language or the user's physical-layout setting.
+  It now takes the active layout as a prop and recomputes its reverse index
+  from it.
+
+**Fun modes** (`docs/01` §7) — Blind, Random capitalization, Sudden death,
+Memory, Ghost race. Selectable from the Type screen's config panel; switching
+mid-session restarts cleanly.
+
+**Offline mode (PWA)**
+
+- Hand-rolled service worker (`public/sw.js`, templated by
+  `scripts/build-sw.mjs` at build time) with a versioned cache name and a
+  build-time-generated precache list — every hashed asset in `dist/` plus
+  `/`, `/index.html` and `/manifest.webmanifest`. Cache-first for precached
+  assets, network-first with a cache fallback for navigations, so the app
+  still boots with no connection after one successful visit.
+- Web app manifest + icon set (`public/manifest.webmanifest`,
+  `public/icons/`), registered from `src/sw-register.ts`, called from
+  `src/main.tsx` and **gated to production builds only** (`import.meta.env.DEV`
+  early-return) so `npm run dev` never registers a half-templated worker.
+- Verified this step, not just asserted: a clean `npm run build` produced a
+  syntactically valid `dist/sw.js` with every `__SW_VERSION__` /
+  `__SW_PRECACHE__` placeholder substituted (the build now hard-fails with a
+  clear error if either literal survives, instead of shipping silently
+  broken); `dist/` served over HTTP and `/`, `/sw.js`, `/manifest.webmanifest`
+  all returned 200 with correct content; and a full-source grep found zero
+  uses of `fetch` / `XMLHttpRequest` / `sendBeacon` / `WebSocket` anywhere in
+  `src/`, and zero outbound `http(s)://` references in `src/`, `public/` or
+  `index.html` other than the harmless, non-fetched SVG namespace URI in
+  `favicon.svg` — the app makes no outbound or cross-origin network requests.
+
+**Tests** — grew from 142 (Step 1) to 270, covering adaptive planning,
+progress/XP/streaks/achievements, lessons, generators, layouts, backup,
+stats, metrics, tools, fun modes, lesson progress, fake-history seeding, and
+an expanded DOM integration suite (now also exercising the on-screen keyboard
+and the new Settings toggles end-to-end with real events).
+
+### Known limitations (unchanged from Step 1, reconfirmed this step)
+
+- Remington (Gail) stays Beta; KrutiDev stays unshipped — see above and
+  `docs/layout-sources.md`.
+- **Lighthouse could not be run in this sandbox.** No Chromium could be
+  installed (`apt-get` has no network route to its mirror; Puppeteer's
+  Chrome auto-download fails TLS). No Lighthouse numbers are available;
+  this is a sandbox limitation, not a claim that the numbers are good.
+- Offline mode was verified by static code review, a build-output content
+  check, and `curl` against the built `dist/` output — not by toggling
+  "Offline" in a real browser's devtools, since no real browser is available
+  in this sandbox.
+
+## Step 2 — Learn, Practice, Stats and Challenges
+
+Merged to `main` as a single squashed commit before this step began, so no
+granular history exists to mine; this entry is written from reading the
+shipped code rather than from original commit messages.
+
+### Added
+
+- **Learn** (`src/features/learn/`) — a structured course (`core/curriculum.ts`)
+  of lessons rendered through `LessonView.tsx`, including adaptive lessons
+  that target a learner's actual weak keys/bigrams via
+  `core/adaptive/planner.ts` and `core/adaptive/scoring.ts` (falling back to a
+  general drill when there isn't enough history yet), plus a finger guide.
+- **Practice** (`src/features/practice/`) — profile-based practice sessions
+  (`core/adaptive/profiles.ts`) that generate text weighted toward specific
+  weaknesses (e.g. punctuation, numbers, specific finger/hand).
+- **Stats** (`src/features/stats/`) — aggregated history view: per-key,
+  per-bigram/trigram, per-finger and per-day stats folded from finished
+  tests, including the keyboard heatmap built on the same `KeyboardDiagram`
+  used elsewhere.
+- **Challenges** (`src/features/challenges/`) — XP, levels, streaks and
+  achievements (`core/progress/xp.ts`, `levels.ts`, `streaks.ts`,
+  `achievements.ts`, `challenges.ts`).
+- Settings, Tools (Keyboard tester) and the About card from `docs/01` were
+  already present on `main` going into Step 3 and were re-verified rather
+  than rebuilt.
+
+### Known limitations carried into Step 3
+
+- No CHANGELOG entry existed for this step before now — the gap was found
+  and closed while preparing the Step 3 entry above, written from code
+  inspection since no per-commit history survived the squash merge.
+
 ## Step 1 — Foundation, typing engine and the Type section
 
 ### Added

@@ -9,9 +9,17 @@ function isActive(path: string, sectionPath: string): boolean {
   return path === sectionPath || path.startsWith(sectionPath + '/');
 }
 
+/** Hide Challenges from navigation entirely when Progression is Off (docs/01). */
+function visibleSections(progressionOff: boolean) {
+  return getSections().filter((s) => !(progressionOff && s.id === 'challenges'));
+}
+
 function Nav({ className, primaryOnly }: { className: string; primaryOnly: boolean }) {
   const path = useRoute();
-  const items = getSections().filter((s) => (primaryOnly ? s.primary : true));
+  const [settings] = useSettings();
+  const items = visibleSections(settings.practice.progression === 'off').filter((s) =>
+    primaryOnly ? s.primary : true,
+  );
   return (
     <nav class={className} aria-label={primaryOnly ? 'Primary' : 'Sections'}>
       {items.map((s) => (
@@ -38,7 +46,8 @@ function BottomNav() {
   const path = useRoute();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const sections = getSections();
+  const [settings] = useSettings();
+  const sections = visibleSections(settings.practice.progression === 'off');
   const primaryItems = sections.filter((s) => s.primary);
   const moreItems = sections.filter((s) => !s.primary);
   const moreActive = moreItems.some((s) => isActive(path, s.path));

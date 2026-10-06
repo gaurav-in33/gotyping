@@ -7,22 +7,27 @@ import { historyRepo } from '../../store/history';
 import { idb, STORES } from '../../store/db';
 import { makeBackup, mergeTests, validateBackup } from '../../store/backup';
 import { emptyAggregates, type Aggregates, type TestRecord } from '../../store/types';
-import { THEMES } from '../../ui/theme/theme';
+import { allThemes } from '../../ui/theme/theme';
 import { useSettings } from '../../ui/useSettings';
 import { Category, Field, Segmented, Select, Slider, Toggle } from '../../ui/components/Controls';
 import { Logo } from '../../ui/shell/Wordmark';
+import { ThemeBuilder } from './ThemeBuilder';
+import { EXTRA_LATIN_LAYOUTS } from '../../core/layouts/alt-latin';
+import type { Settings } from '../../store/settings';
 import './settings.css';
 
 function ThemePicker({
   value,
   onChange,
   mode,
+  settings,
 }: {
   value: string;
   onChange: (id: string) => void;
   mode: 'light' | 'dark';
+  settings: Settings;
 }) {
-  const list = THEMES.filter((t) => t.mode === mode);
+  const list = allThemes(settings).filter((t) => t.mode === mode);
   return (
     <div class="theme-grid">
       {list.map((t) => (
@@ -131,6 +136,13 @@ export default function SettingsScreen() {
                 label="Capitalization"
                 checked={s.typing.capitalization}
                 onChange={(v) => update((d) => void (d.typing.capitalization = v))}
+              />
+            </Field>
+            <Field label="Auto restart" hint="Start a fresh test automatically a moment after you finish one">
+              <Toggle
+                label="Auto restart"
+                checked={s.typing.autoRestart}
+                onChange={(v) => update((d) => void (d.typing.autoRestart = v))}
               />
             </Field>
           </>
@@ -274,7 +286,7 @@ export default function SettingsScreen() {
             </Field>
             <Field label="Live stats shown">
               <div class="field__control">
-                {(['wpm', 'accuracy', 'errors', 'timer', 'progress'] as const).map((k) => (
+                {(['wpm', 'accuracy', 'errors', 'timer', 'progress', 'words'] as const).map((k) => (
                   <label
                     key={k}
                     style={{ display: 'flex', gap: '4px', alignItems: 'center', fontSize: '.82rem' }}
@@ -358,7 +370,41 @@ export default function SettingsScreen() {
         </Field>
       </Category>
 
-      <Category title="Language and keyboard">
+      <Category
+        title="Language and keyboard"
+        advanced={
+          <>
+            <Field label="On-screen keyboard" hint="Shows a keyboard under the typing box; tap a key to type it">
+              <Toggle
+                label="On-screen keyboard"
+                checked={s.display.showKeyboard}
+                onChange={(v) => update((d) => void (d.display.showKeyboard = v))}
+              />
+            </Field>
+            <Field label="Highlight next key" hint="On the on-screen keyboard, light up the key you need next">
+              <Toggle
+                label="Highlight next key"
+                checked={s.keyboard.highlightNextKey}
+                onChange={(v) => update((d) => void (d.keyboard.highlightNextKey = v))}
+              />
+            </Field>
+            <Field label="Key labels" hint="Off hides the glyphs on the on-screen keyboard, for drilling recall">
+              <Toggle
+                label="Key labels"
+                checked={s.keyboard.showKeyLabels}
+                onChange={(v) => update((d) => void (d.keyboard.showKeyLabels = v))}
+              />
+            </Field>
+            <Field label="Finger guide" hint="Shows which finger reaches each key during Learn lessons">
+              <Toggle
+                label="Finger guide"
+                checked={s.keyboard.fingerGuide}
+                onChange={(v) => update((d) => void (d.keyboard.fingerGuide = v))}
+              />
+            </Field>
+          </>
+        }
+      >
         <Field label="Language">
           <Segmented
             label="Language"
@@ -402,11 +448,17 @@ export default function SettingsScreen() {
             <span class="hint">See docs/layout-sources.md</span>
           </Field>
         )}
-        <Field label="Physical layout">
+        <Field
+          label="Physical layout"
+          hint="Colemak/Dvorak only change what the keyboard tester, finger guide and heatmap show — your OS already decides what each key types"
+        >
           <Select
             label="Physical layout"
             value={s.keyboard.physicalLayout}
-            options={[{ id: 'qwerty', label: 'QWERTY' }]}
+            options={[
+              { id: 'qwerty', label: 'QWERTY' },
+              ...EXTRA_LATIN_LAYOUTS.map((l) => ({ id: l.id, label: l.name })),
+            ]}
             onChange={(v) => update((d) => void (d.keyboard.physicalLayout = v))}
           />
         </Field>
@@ -453,6 +505,7 @@ export default function SettingsScreen() {
         <Field label="Light theme">
           <ThemePicker
             mode="light"
+            settings={s}
             value={s.theme.lightTheme}
             onChange={(id) => update((d) => void (d.theme.lightTheme = id))}
           />
@@ -460,13 +513,51 @@ export default function SettingsScreen() {
         <Field label="Dark theme">
           <ThemePicker
             mode="dark"
+            settings={s}
             value={s.theme.darkTheme}
             onChange={(id) => update((d) => void (d.theme.darkTheme = id))}
           />
         </Field>
+        <div class="field" style={{ display: 'block' }}>
+          <details class="disclosure">
+            <summary>Custom theme builder</summary>
+            <ThemeBuilder
+              settings={s}
+              onSave={(theme) =>
+                update((d) => {
+                  const i = d.theme.customThemes.findIndex((t) => t.id === theme.id);
+                  if (i >= 0) d.theme.customThemes[i] = theme;
+                  else d.theme.customThemes.push(theme);
+                })
+              }
+              onDelete={(id) =>
+                update((d) => {
+                  d.theme.customThemes = d.theme.customThemes.filter((t) => t.id !== id);
+                  if (d.theme.lightTheme === id) d.theme.lightTheme = 'paper';
+                  if (d.theme.darkTheme === id) d.theme.darkTheme = 'graphite';
+                })
+              }
+            />
+          </details>
+        </div>
       </Category>
 
       <Category title="Practice">
+        <Field
+          label="Progression"
+          hint="XP, levels, streaks, challenges and achievements. Off removes the Challenges section and every XP element."
+        >
+          <Segmented
+            label="Progression"
+            value={s.practice.progression}
+            options={[
+              { id: 'full', label: 'Full' },
+              { id: 'minimal', label: 'Minimal' },
+              { id: 'off', label: 'Off' },
+            ]}
+            onChange={(v) => update((d) => void (d.practice.progression = v))}
+          />
+        </Field>
         <Field label="Difficulty" hint="Share of easy, rhythm-keeping words mixed into adaptive drills">
           <Segmented
             label="Difficulty"

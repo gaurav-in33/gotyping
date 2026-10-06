@@ -25,6 +25,7 @@ const EMPTY_LIVE: LiveValues = {
   time: 0,
   countdown: false,
   progress: 0,
+  words: 0,
 };
 
 export interface TypingBoxProps {
@@ -113,6 +114,7 @@ export function TypingBox({
           time: durationMs > 0 ? Math.ceil(sess.remainingMs(now()) / 1000) : sess.activeMs(now()) / 1000,
           countdown: durationMs > 0,
           progress: total > 0 ? Math.min(1, sess.getPos() / total) : 0,
+          words: m.correctWords + m.incorrectWords,
         });
         if (e.type === 'complete') {
           setPhase('done');

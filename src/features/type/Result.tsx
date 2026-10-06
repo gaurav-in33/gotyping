@@ -13,6 +13,8 @@ export interface ResultProps {
   /** When set, the result banner shows an explicit pass/fail against these targets. */
   targetWpm?: number | null;
   targetAccuracy?: number | null;
+  /** Ghost race fun mode (docs/01 §7): the stored run this attempt raced, if any. */
+  ghostResult?: { wpm: number; beat: boolean } | null;
 }
 
 /** Pass/fail against the configured (or lesson) targets — null target = no requirement. */
@@ -47,6 +49,7 @@ export function Result({
   onNext,
   targetWpm,
   targetAccuracy,
+  ghostResult,
 }: ResultProps) {
   const [copied, setCopied] = useState(false);
   const recordable = isRecordable(m);
@@ -82,6 +85,14 @@ export function Result({
           {passed ? 'Target met — pass' : 'Below target — try again'}
           {targetWpm != null ? ` · target ${targetWpm} wpm` : ''}
           {targetAccuracy != null ? ` · target ${targetAccuracy}% accuracy` : ''}
+        </p>
+      ) : null}
+
+      {ghostResult ? (
+        <p class={`result__pass result__pass--${ghostResult.beat ? 'ok' : 'no'}`} role="status">
+          {ghostResult.beat
+            ? `Ghost race — you beat your ${ghostResult.wpm} wpm ghost`
+            : `Ghost race — your ghost stayed ahead at ${ghostResult.wpm} wpm`}
         </p>
       ) : null}
 

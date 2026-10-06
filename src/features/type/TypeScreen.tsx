@@ -11,12 +11,34 @@ import { useSettings } from '../../ui/useSettings';
 import { historyRepo, makeTestRecord, personalBest } from '../../store/history';
 import { foldTest } from '../../store/aggregates';
 import { idb, STORES } from '../../store/db';
+import { progressRepo } from '../../store/progress';
+import { xpForTest } from '../../core/progress/xp';
 import { emptyAggregates, type Aggregates, type TestRecord } from '../../store/types';
 import { TextRenderer } from './TextRenderer';
 import { ConfigBar, summarize, type TestConfig } from './ConfigBar';
 import { LiveStats, type LiveValues } from './LiveStats';
 import { Result } from './Result';
+import { OnScreenKeyboard } from './OnScreenKeyboard';
+import { layoutByAnyId } from '../../core/layouts/registry';
+import type { FunModeId } from '../../core/fun/modes';
+import { randomizeCase } from '../../core/fun/textFx';
+import { generateCode, type CodeLang } from '../../core/text/code';
+import { planPracticeText } from '../../core/adaptive/planner';
+import { profileById } from '../../core/adaptive/profiles';
+import {
+  cumulativeMsFromCaptures,
+  ghostKey,
+  ghostRepo,
+  ghostProgressAt,
+  isBetterGhost,
+  type GhostRecord,
+} from '../../core/fun/ghost';
 import './type.css';
+
+const BURST_SECONDS = 10;
+const ENDURANCE_SECONDS = 600;
+const MEMORY_MIN_MS = 3000;
+const MEMORY_MAX_MS = 15000;
 
 const now = (): number => performance.now();
 
@@ -27,6 +49,7 @@ const EMPTY_LIVE: LiveValues = {
   time: 0,
   countdown: false,
   progress: 0,
+  words: 0,
 };
 
 export default function TypeScreen() {
@@ -49,6 +72,15 @@ export default function TypeScreen() {
   const [isPb, setIsPb] = useState(false);
   const [focused, setFocused] = useState(false);
   const [seed, setSeed] = useState(() => Date.now());
+  const [funMode, setFunMode] = useState<FunModeId>('none');
+  const [codeLang, setCodeLang] = useState<CodeLang>('javascript');
+  const [agg, setAgg] = useState<Aggregates | null>(null);
+  const [memoryHidden, setMemoryHidden] = useState(false);
+  const [ghostResult, setGhostResult] = useState<{ wpm: number; beat: boolean } | null>(null);
+  const memoryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ghostRef = useRef<GhostRecord | null>(null);
+  const [ghostLive, setGhostLive] = useState<{ you: number; ghost: number } | null>(null);
+  const [nextChar, setNextChar] = useState<string | null>(null);
 
   const textRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -68,9 +100,27 @@ export default function TypeScreen() {
     };
   }, [lang]);
 
+  // Loaded once for the "Difficult words" fun mode — reuses the same
+  // aggregates Practice's adaptive planner already reads (one implementation).
+  useEffect(() => {
+    if (funMode !== 'difficult') return;
+    let alive = true;
+    void idb.get<Aggregates>(STORES.aggregates, 'global').then((a) => {
+      if (alive) setAgg(a ?? emptyAggregates());
+    });
+    return () => {
+      alive = false;
+    };
+  }, [funMode]);
+
   // Hindi resolves from the physical key; Latin trusts event.key.
   const hindiLayout = useMemo(() => layoutById(settings.keyboard.hindiLayout), [settings.keyboard.hindiLayout]);
   const hindiFunctional = isFunctional(hindiLayout);
+  // On-screen keyboard / finger guide reference layout (docs/01 §9).
+  const activeLayout = useMemo(
+    () => (lang === 'hi' && hindiFunctional ? hindiLayout : layoutByAnyId(settings.keyboard.physicalLayout)),
+    [lang, hindiFunctional, hindiLayout, settings.keyboard.physicalLayout],
+  );
   useEffect(() => {
     const useHindi = lang === 'hi' && hindiFunctional;
     resolverRef.current.setLayout(useHindi ? hindiLayout : QWERTY);
@@ -84,20 +134,53 @@ export default function TypeScreen() {
         return buildText({ style: 'custom', words: [], count: 0, seed: s, custom: config.custom });
       }
       if (config.mode === 'quote') {
-        return buildText({ style: 'quote', words: [], count: 0, seed: s, quotes: p.quotes });
+        const text = buildText({ style: 'quote', words: [], count: 0, seed: s, quotes: p.quotes });
+        return funMode === 'randomCap' ? randomizeCase(text, s) : text;
       }
       const count = config.mode === 'words' ? config.wordCount : 60;
-      return buildText({
-        style: config.style,
-        words: p.words,
-        count,
-        seed: s,
-        punctuation: settings.typing.punctuation,
-        numbers: settings.typing.numbers,
-        capitalization: settings.typing.capitalization,
-      });
+
+      // Code fun mode (docs/01 §7 "Code"): real-looking JavaScript/Python
+      // snippets instead of prose, for Time and Words modes. Takes over from
+      // the Style picker while active, the same way "Difficult words" does.
+      if (funMode === 'code') {
+        return generateCode({ lang: codeLang, seed: s, count });
+      }
+
+      // Difficult-word fun mode reuses Practice's adaptive planner (docs/05)
+      // instead of a second weighting implementation — only meaningful for
+      // the plain "Words" text style, and only once aggregates have loaded.
+      let text: string;
+      if (funMode === 'difficult' && config.style === 'words' && agg) {
+        text = planPracticeText({
+          pool: p.words,
+          agg,
+          profile: profileById('words'),
+          count,
+          seed: s,
+          easyShare: 0.2,
+        }).text;
+      } else {
+        text = buildText({
+          style: config.style,
+          words: p.words,
+          count,
+          seed: s,
+          punctuation: settings.typing.punctuation,
+          numbers: settings.typing.numbers,
+          capitalization: settings.typing.capitalization,
+        });
+      }
+      return funMode === 'randomCap' ? randomizeCase(text, s) : text;
     },
-    [config, settings.typing.punctuation, settings.typing.numbers, settings.typing.capitalization],
+    [
+      config,
+      settings.typing.punctuation,
+      settings.typing.numbers,
+      settings.typing.capitalization,
+      funMode,
+      codeLang,
+      agg,
+    ],
   );
 
   // --------------------------------------------------------- session setup
@@ -115,24 +198,31 @@ export default function TypeScreen() {
           durationMs: isTime ? config.seconds * 1000 : 0,
           endOnLastUnit: !isTime && !isZen,
           zen: isZen,
+          // Sudden death (docs/01 §7 "Master"): the engine already supports
+          // this exactly, it just had no UI switch before.
+          failOnMistake: funMode === 'master',
         },
         isTime
-          ? () =>
-              ' ' +
-              buildText({
-                style: config.style,
-                words: p.words,
-                count: 40,
-                seed: `${s}-ext-${Math.random()}`,
-                punctuation: settings.typing.punctuation,
-                numbers: settings.typing.numbers,
-                capitalization: settings.typing.capitalization,
-              })
+          ? () => {
+              const text =
+                funMode === 'code'
+                  ? generateCode({ lang: codeLang, seed: `${s}-ext-${Math.random()}`, count: 40 })
+                  : buildText({
+                      style: config.style,
+                      words: p.words,
+                      count: 40,
+                      seed: `${s}-ext-${Math.random()}`,
+                      punctuation: settings.typing.punctuation,
+                      numbers: settings.typing.numbers,
+                      capitalization: settings.typing.capitalization,
+                    });
+              return ' ' + (funMode === 'randomCap' ? randomizeCase(text, Math.random()) : text);
+            }
           : undefined,
       );
       return sess;
     },
-    [config, makeText, settings.typing],
+    [config, makeText, settings.typing, funMode, codeLang],
   );
 
   const resetTest = useCallback(
@@ -143,24 +233,50 @@ export default function TypeScreen() {
       sessionRef.current = sess;
       unitCountRef.current = sess.getUnits().length;
 
+      if (memoryTimerRef.current) clearTimeout(memoryTimerRef.current);
+      setGhostLive(null);
+      setGhostResult(null);
+      if (funMode === 'ghost') {
+        void ghostRepo
+          .get(ghostKey(lang, config.mode, config.style))
+          .then((g) => (ghostRef.current = g ?? null));
+      } else {
+        ghostRef.current = null;
+      }
+
       const r = rendererRef.current;
       if (r) {
-        r.setOptions({ blind: false });
+        r.setOptions({ blind: funMode === 'blind' });
         r.setText(sess.getUnits());
         r.refresh(sess.getStates(), 0);
       }
+
+      if (funMode === 'memory') {
+        setMemoryHidden(false);
+        const unitCount = sess.getUnits().length;
+        const previewMs = Math.min(
+          MEMORY_MAX_MS,
+          Math.max(MEMORY_MIN_MS, Math.round(unitCount * 60)),
+        );
+        memoryTimerRef.current = setTimeout(() => setMemoryHidden(true), previewMs);
+      } else {
+        setMemoryHidden(false);
+      }
+
       setPhase('ready');
       setResult(null);
       setFailed(null);
       setIsPb(false);
+      setNextChar(sess.getUnits()[0] ?? null);
       setLive({
         ...EMPTY_LIVE,
         time: config.mode === 'time' ? config.seconds : 0,
         countdown: config.mode === 'time',
       });
     },
-    [pack, seed, buildSession, config.mode, config.seconds],
+    [pack, seed, buildSession, config.mode, config.seconds, config.style, funMode, lang],
   );
+
 
   /**
    * Callback ref, not a mount-once effect: the text element is absent while
@@ -190,7 +306,21 @@ export default function TypeScreen() {
   useEffect(() => {
     resetTest();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pack, config, seed, settings.typing.stopOnError, settings.typing.backspace, settings.typing.skipWord, settings.typing.punctuation, settings.typing.numbers, settings.typing.capitalization]);
+  }, [pack, config, seed, funMode, codeLang, agg, settings.typing.stopOnError, settings.typing.backspace, settings.typing.skipWord, settings.typing.punctuation, settings.typing.numbers, settings.typing.capitalization]);
+
+  // Auto restart (docs/01 §9 Typing settings, Settings > Typing > Advanced):
+  // once a test finishes, quietly start a fresh one instead of waiting for
+  // "Try again" / "Next". A brief pause lets the result actually be seen.
+  useEffect(() => {
+    if (phase !== 'done' || !settings.typing.autoRestart) return;
+    const t = setTimeout(() => setSeed(Date.now()), 1500);
+    return () => clearTimeout(t);
+  }, [phase, settings.typing.autoRestart]);
+
+  // Clear any pending Memory-mode reveal timer on unmount.
+  useEffect(() => () => {
+    if (memoryTimerRef.current) clearTimeout(memoryTimerRef.current);
+  }, []);
 
   // Re-measure when the text box geometry can change (font, width, resize).
   useEffect(() => {
@@ -249,14 +379,32 @@ export default function TypeScreen() {
         await historyRepo.add(record, settings.data.historyCap);
 
         const stored = await idb.get<Aggregates>(STORES.aggregates, 'global');
-        const agg = stored ?? emptyAggregates();
-        foldTest(agg, record, sess ? sess.getCapture() : []);
-        await idb.put(STORES.aggregates, agg, 'global');
+        const aggregates = stored ?? emptyAggregates();
+        foldTest(aggregates, record, sess ? sess.getCapture() : []);
+        await idb.put(STORES.aggregates, aggregates, 'global');
+
+        if (settings.practice.progression !== 'off') {
+          await progressRepo.addXp(xpForTest({ wpm: m.wpm, accuracy: m.accuracy, timeMs: m.timeMs, consistency: m.consistency }));
+        }
+
+        if (funMode === 'ghost' && sess) {
+          const key = ghostKey(lang, config.mode, config.style);
+          const prev = await ghostRepo.get(key);
+          setGhostResult(prev ? { wpm: prev.wpm, beat: m.wpm > prev.wpm } : null);
+          const next: GhostRecord = {
+            id: key,
+            cumulativeMs: cumulativeMsFromCaptures(sess.getCapture()),
+            wpm: m.wpm,
+            accuracy: m.accuracy,
+            at: Date.now(),
+          };
+          if (isBetterGhost(next, prev)) await ghostRepo.save(next);
+        }
       } catch {
         // Storage problems must never break the typing experience.
       }
     },
-    [config, lang, settings.keyboard, settings.typing, settings.data.historyCap],
+    [config, lang, settings.keyboard, settings.typing, settings.data.historyCap, settings.practice.progression, funMode],
   );
 
   // --------------------------------------------------------------- ticking
@@ -294,7 +442,12 @@ export default function TypeScreen() {
             : sess.activeMs(now()) / 1000,
         countdown: config.mode === 'time',
         progress,
+        words: m.correctWords + m.incorrectWords,
       });
+      if (ghostRef.current) {
+        setGhostLive({ you: sess.getPos(), ghost: ghostProgressAt(ghostRef.current, sess.activeMs(now())) });
+      }
+      setNextChar(sess.getUnits()[sess.getPos()] ?? null);
     };
 
     return sess.on((e) => {
@@ -420,6 +573,14 @@ export default function TypeScreen() {
 
   const focusInput = (): void => inputRef.current?.focus();
 
+  const onFunMode = (id: FunModeId): void => {
+    setFunMode(id);
+    // Burst/Endurance are time tests at a fixed duration (docs/01 §7) — set
+    // it once on selection; the user can still retune it afterward.
+    if (id === 'burst') setConfig((c) => ({ ...c, mode: 'time', seconds: BURST_SECONDS }));
+    else if (id === 'endurance') setConfig((c) => ({ ...c, mode: 'time', seconds: ENDURANCE_SECONDS }));
+  };
+
   if (!pack) {
     return <p class="loading">Loading language…</p>;
   }
@@ -435,6 +596,7 @@ export default function TypeScreen() {
         onNext={() => setSeed(Date.now())}
         targetWpm={settings.practice.targetWpm}
         targetAccuracy={settings.practice.targetAccuracy}
+        ghostResult={ghostResult}
       />
     );
   }
@@ -449,6 +611,10 @@ export default function TypeScreen() {
         settings={settings}
         updateSettings={updateSettings}
         hidden={phase === 'typing' && settings.display.focusMode}
+        funMode={funMode}
+        onFunMode={onFunMode}
+        codeLang={codeLang}
+        onCodeLang={setCodeLang}
       />
 
       {lang === 'hi' && !hindiFunctional ? (
@@ -461,13 +627,24 @@ export default function TypeScreen() {
 
       <LiveStats v={live} settings={settings} />
 
+      {funMode === 'ghost' && ghostLive ? (
+        <p class="hint" role="status" style={{ textAlign: 'center' }}>
+          Ghost race — you: {ghostLive.you} · ghost: {ghostLive.ghost}{' '}
+          {ghostLive.you >= ghostLive.ghost ? '(ahead)' : '(behind)'}
+        </p>
+      ) : funMode === 'ghost' && !ghostRef.current ? (
+        <p class="hint" role="status" style={{ textAlign: 'center' }}>
+          No stored ghost yet for this mode/style — this run becomes the one to beat.
+        </p>
+      ) : null}
+
       {emptyCustom ? (
         <div class="panel empty-state">
           <p>Add your own text in the config panel above to start a custom test.</p>
         </div>
       ) : (
         <div
-          class="text"
+          class={`text${memoryHidden ? ' text--memory-hidden' : ''}`}
           ref={attachText}
           data-caret={settings.display.smoothCaret ? 'smooth' : settings.display.caretStyle}
           onClick={focusInput}
@@ -476,6 +653,11 @@ export default function TypeScreen() {
           {!focused ? (
             <div class="text__overlay">
               <span>Click here or press a key to start typing</span>
+            </div>
+          ) : null}
+          {memoryHidden ? (
+            <div class="text__overlay" style={{ pointerEvents: 'none' }}>
+              <span>Memory mode — keep typing, the text is hidden</span>
             </div>
           ) : null}
         </div>
@@ -497,6 +679,19 @@ export default function TypeScreen() {
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
       />
+
+      {settings.display.showKeyboard ? (
+        <OnScreenKeyboard
+          layout={activeLayout}
+          nextChar={nextChar}
+          highlightNextKey={settings.keyboard.highlightNextKey}
+          showKeyLabels={settings.keyboard.showKeyLabels}
+          onTap={(ch) => {
+            feed(ch);
+            focusInput();
+          }}
+        />
+      ) : null}
 
       <div class="type__actions">
         <button

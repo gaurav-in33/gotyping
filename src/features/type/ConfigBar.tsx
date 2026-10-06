@@ -2,6 +2,8 @@ import { useState } from 'preact/hooks';
 import { LANGUAGES } from '../../content';
 import type { LanguageId, Settings } from '../../store/settings';
 import type { UpdateFn } from '../../ui/useSettings';
+import { FUN_MODES, type FunModeId } from '../../core/fun/modes';
+import { CODE_LANGS, type CodeLang } from '../../core/text/code';
 
 export type TestMode = 'time' | 'words' | 'quote' | 'custom' | 'zen';
 export type TextStyleId = 'words' | 'paragraph' | 'sentence' | 'numbers' | 'punctuation' | 'mixed';
@@ -80,6 +82,10 @@ export interface ConfigBarProps {
   settings: Settings;
   updateSettings: UpdateFn;
   hidden: boolean;
+  funMode: FunModeId;
+  onFunMode: (id: FunModeId) => void;
+  codeLang: CodeLang;
+  onCodeLang: (id: CodeLang) => void;
 }
 
 export function ConfigBar({
@@ -88,6 +94,10 @@ export function ConfigBar({
   settings,
   updateSettings,
   hidden,
+  funMode,
+  onFunMode,
+  codeLang,
+  onCodeLang,
 }: ConfigBarProps) {
   const [open, setOpen] = useState(false);
   const lang = settings.language.current;
@@ -268,6 +278,23 @@ export function ConfigBar({
                   })
                 }
               />
+            </div>
+
+            <div class="config__group" style={{ alignItems: 'flex-start' }}>
+              <span class="config__label">More modes</span>
+              <div>
+                <Seg label="Fun mode" options={FUN_MODES} value={funMode} onChange={onFunMode} />
+                {funMode !== 'none' ? (
+                  <p class="hint" style={{ marginTop: '6px' }}>
+                    {FUN_MODES.find((m) => m.id === funMode)?.hint}
+                  </p>
+                ) : null}
+                {funMode === 'code' ? (
+                  <div style={{ marginTop: '6px' }}>
+                    <Seg label="Code language" options={CODE_LANGS} value={codeLang} onChange={onCodeLang} />
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <p class="hint">

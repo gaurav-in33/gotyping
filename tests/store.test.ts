@@ -200,6 +200,17 @@ describe('history', () => {
     expect(filterTests(tests, {})).toHaveLength(3);
   });
 
+  it('filters by lessonId (Stats > lesson filter)', () => {
+    const tests = [
+      rec({ lang: 'en', lessonId: 'home-row-1' }),
+      rec({ lang: 'en', lessonId: 'home-row-2' }),
+      rec({ lang: 'en' }), // no lesson (a Type/Practice session)
+    ];
+    expect(filterTests(tests, { lessonId: 'home-row-1' })).toHaveLength(1);
+    expect(filterTests(tests, { lessonId: 'home-row-2' })[0]!.lessonId).toBe('home-row-2');
+    expect(filterTests(tests, {})).toHaveLength(3);
+  });
+
   it('finds the personal best within a filter', () => {
     const tests = [
       rec({ wpm: 40, lang: 'en' }),

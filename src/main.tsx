@@ -5,6 +5,9 @@ import './styles/utilities.css';
 import { App } from './app';
 import { settingsStore } from './store/settings';
 import { applyDisplaySettings, applyTheme, resolveTheme } from './ui/theme/theme';
+import { registerServiceWorker } from './sw-register';
+
+registerServiceWorker();
 
 // Paint the correct theme before the first frame to avoid a flash.
 const initial = settingsStore.get();

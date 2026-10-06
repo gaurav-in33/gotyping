@@ -4,6 +4,7 @@
  * they are unit-testable without mounting anything.
  */
 import { isoDay } from './aggregates';
+import { currentStreak } from '../core/progress/streaks';
 import type { Aggregates, TestRecord } from './types';
 
 export interface Overview {
@@ -30,15 +31,7 @@ export function computeOverview(tests: readonly TestRecord[], days: Aggregates['
 
 /** Consecutive days with at least one test, counting back from today (or yesterday if today is empty). */
 export function streakDays(days: Aggregates['days'], today = Date.now()): number {
-  let streak = 0;
-  let cursor = today;
-  // Allow "today has no test yet" to not break a streak that is still alive.
-  if (!days[isoDay(cursor)]) cursor -= 24 * 60 * 60 * 1000;
-  while (days[isoDay(cursor)]) {
-    streak++;
-    cursor -= 24 * 60 * 60 * 1000;
-  }
-  return streak;
+  return currentStreak(days, isoDay, today, 0).streak;
 }
 
 export interface ActivityDay {

@@ -117,7 +117,57 @@ keyboard driver shipped by an OS/IME vendor) is available.
 ## KrutiDev ↔ Unicode — not shipped
 
 Same reasoning as Step 1 (docs/06, final section): a converter is only worth shipping with a
-mapping that has been tested against real documents. Still omitted; revisit in Step 3.
+mapping that has been tested against real documents. Still omitted after a second search pass
+in Step 3 — see "Step 3 revisit" below for exactly what was checked and why it still fails the
+reliability bar.
+
+## Step 3 revisit: Remington and KrutiDev, searched again
+
+Per the owner's Step 3 instruction ("mere chart se bhar sako to bharo" — fill Remington in if a
+trustworthy chart turns up, otherwise keep it Beta), both gaps above were searched again before
+any new Tools/Settings work was built. Nothing found this pass clears the bar set in Step 2, so
+both decisions are **unchanged**:
+
+- **Remington (Gail)** stays shipped with only the digit row mapped, `verified: false`, and
+  excluded from live Learn/Type Hindi sessions (`isFunctional()` in
+  `src/core/layouts/hindi.ts` requires ≥20 mapped keys; Remington has 10).
+- **KrutiDev ↔ Unicode converter** stays omitted entirely — not even as a Beta feature — because
+  omission was the owner's own fallback instruction when no reliable mapping exists, and nothing
+  found changes that.
+
+Sources checked this pass, and why each still fails rule 1 (no inventing a key table from an
+unreliable or unparsable source):
+
+- A government (CRPF) recruitment PDF that references a Remington/GAIL typing test: describes
+  the *exam format* (duration, word count, qualifying speed) but does not publish a key-by-key
+  layout chart at all — nothing to extract.
+- `gurukultypingskill.com`'s Remington/GAIL page (re-checked): still the same interactive-widget
+  chart identified in Step 2, where base/shift/finger-guide labels and multi-key conjunct
+  sequences are interleaved in the rendered text in a way that cannot be parsed back into a
+  `KeyCap` table without a real risk of silently transposing two keys.
+- `easyhindityping.com`'s Remington/GAIL page (re-checked, including the page's first content
+  chunk specifically in case earlier reads had missed a clean table further down): prose
+  description and practice links, no machine-readable per-key chart.
+- `smarttypingsolution.com` (new this pass): markets a typing-tutor product and shows marketing
+  screenshots of its own software's keyboard overlay, not a citable, independent layout
+  reference — the image is also not a primary/authoritative source (not government, not an OS
+  driver), so even a successfully-read chart from it would not have cleared rule 1's bar.
+
+None of the above is a complaint about the sources existing — Remington/GAIL and KrutiDev are
+both real, widely-used conventions in Indian government typing exams. The problem is specific
+to what Step 3 can verify without guessing: there is no government standard document or
+OS-shipped keyboard driver for either (unlike InScript, which has both — see above), so every
+available source is either incomplete, image-only, or structured in a way that cannot be
+machine-read without risking a silently wrong character. Shipping a guess would fail a real
+exam-taker in a way they would not discover until the exam itself; staying Beta/omitted fails
+loudly and visibly instead (Beta badge, Settings hint, Tools empty-state), which is the
+tradeoff AGENT.md's and docs/06's verification rule explicitly asks for.
+
+**What would unblock this:** an official GAIL/CPCT/government exam notification appendix that
+publishes the Remington key table directly, or a Remington/KrutiDev keyboard driver shipped by
+an OS or IME vendor (the same kind of primary source that made InScript shippable). Revisit
+again whenever one surfaces — the `data/remington-beta.json` + `REMINGTON` layout structures
+already exist and are ready to receive more verified keys without any code changes.
 
 ## Engine-level Devanagari correctness (independently verified)
 
@@ -130,3 +180,20 @@ Independently of the key tables, the typing engine handles Devanagari text corre
 
 So Hindi *text* (what Learn/Practice/Type show and score) is correct today, independent of
 whether a given physical key mapping is fully verified.
+
+## Colemak / Dvorak (Step 3, Latin) — `verified: true`, reference-only
+
+`src/core/layouts/alt-latin.ts`. Standard ANSI Colemak and Dvorak tables (Wikipedia:
+"Colemak", "Dvorak keyboard layout" — both are long-settled, unambiguous public standards with
+no competing versions to reconcile, unlike Remington).
+
+These are safe to mark `verified: true` on a much lower bar than the Hindi layouts above for a
+structural reason, not a documentation one: `core/layouts/resolver.ts` **trusts
+`KeyboardEvent.key` for Latin scripts** — the OS has already applied whatever physical layout is
+actually installed before the browser sees the event. So this table is never consulted to
+decide what a keystroke produces; it only drives what the on-screen keyboard, finger guide and
+Stats heatmap *draw* for someone who tells Settings they type on one of these layouts. A wrong
+cell here would misdraw a picture, not mis-score a single keystroke — a fundamentally smaller
+blast radius than the Hindi tables, where the same file *does* decide the typed character
+(InScript/Remington resolve from the physical key, not `event.key`, because Devanagari has no
+single universal OS layout to defer to).
