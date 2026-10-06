@@ -8,6 +8,15 @@ export interface KeyCap {
   code: string;
   normal: string;
   shift: string;
+  /**
+   * Per-key verification status (docs/06 rule 2). Undefined means "not
+   * applicable" (e.g. Latin layouts, where the whole layout is verified at
+   * once). Hindi layouts set this per key so a layout can ship with some
+   * keys confirmed and others flagged, instead of an all-or-nothing Beta.
+   */
+  verified?: boolean;
+  /** Why a key is flagged, or what was corrected/added — shown in the tester. */
+  note?: string;
 }
 
 export interface LayoutRow {
