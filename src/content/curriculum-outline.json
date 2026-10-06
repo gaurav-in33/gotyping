@@ -1,0 +1,591 @@
+{
+  "note": "OUTLINE ONLY. Lesson text must be ORIGINAL (generated from keys, word lists, own sentences). Do not copy TypingClub or any other course. type = how the text is generated; the agent defines generators. Hindi lessons apply to whichever Hindi layout is selected (Inscript or Remington).",
+  "categories": [
+    {
+      "id": "en-beginner",
+      "name": "Beginner",
+      "lang": "en",
+      "lessons": [
+        {
+          "id": "en-beginner-01",
+          "title": "Meet the keyboard",
+          "type": "intro",
+          "keys": "",
+          "objective": "Learn the layout, posture and where fingers rest.",
+          "targetAccuracy": null,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-beginner-02",
+          "title": "F and J anchors",
+          "type": "keys",
+          "keys": "fj",
+          "objective": "Find the bumps and return to home position.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-beginner-03",
+          "title": "Left index and middle",
+          "type": "keys",
+          "keys": "fdgs",
+          "objective": "Type with left index and middle fingers.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-beginner-04",
+          "title": "Right index and middle",
+          "type": "keys",
+          "keys": "jkh",
+          "objective": "Type with right index and middle fingers.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-beginner-05",
+          "title": "Ring and pinky fingers",
+          "type": "keys",
+          "keys": "asl;",
+          "objective": "Add ring and pinky fingers.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-beginner-06",
+          "title": "Full home row",
+          "type": "keys",
+          "keys": "asdfghjkl;",
+          "objective": "Combine the full home row.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-beginner-07",
+          "title": "Index finger reach",
+          "type": "keys",
+          "keys": "gh",
+          "objective": "Reach G and H without losing home position.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 2
+        }
+      ]
+    },
+    {
+      "id": "en-rows",
+      "name": "Letter rows",
+      "lang": "en",
+      "lessons": [
+        {
+          "id": "en-rows-01",
+          "title": "Top row: left",
+          "type": "keys",
+          "keys": "qwert",
+          "objective": "Reach up with the left hand.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-rows-02",
+          "title": "Top row: right",
+          "type": "keys",
+          "keys": "yuiop",
+          "objective": "Reach up with the right hand.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-rows-03",
+          "title": "Full top row",
+          "type": "keys",
+          "keys": "qwertyuiop",
+          "objective": "Top row with both hands.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-rows-04",
+          "title": "Bottom row: left",
+          "type": "keys",
+          "keys": "zxcvb",
+          "objective": "Reach down with the left hand.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-rows-05",
+          "title": "Bottom row: right",
+          "type": "keys",
+          "keys": "nm,./",
+          "objective": "Reach down with the right hand.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-rows-06",
+          "title": "Full bottom row",
+          "type": "keys",
+          "keys": "zxcvbnm,./",
+          "objective": "Bottom row with both hands.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-rows-07",
+          "title": "Mixed rows",
+          "type": "keys",
+          "keys": "abcdefghijklmnopqrstuvwxyz",
+          "objective": "All letter rows mixed.",
+          "targetAccuracy": 94,
+          "targetWpm": null,
+          "estMinutes": 4
+        }
+      ]
+    },
+    {
+      "id": "en-skill",
+      "name": "Skill building",
+      "lang": "en",
+      "lessons": [
+        {
+          "id": "en-skill-01",
+          "title": "Common bigrams",
+          "type": "ngrams",
+          "keys": "th he in er an re on at en nd",
+          "objective": "Type the most common letter pairs fluently.",
+          "targetAccuracy": 94,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-skill-02",
+          "title": "Common trigrams",
+          "type": "ngrams",
+          "keys": "the and ing ion tio ent ati for her ter",
+          "objective": "Type common three-letter chunks.",
+          "targetAccuracy": 94,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-skill-03",
+          "title": "Common words",
+          "type": "words",
+          "keys": "",
+          "objective": "Type the most frequent English words.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-skill-04",
+          "title": "Sentences",
+          "type": "sentences",
+          "keys": "",
+          "objective": "Type full sentences with punctuation.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "en-skill-05",
+          "title": "Paragraphs",
+          "type": "paragraph",
+          "keys": "",
+          "objective": "Sustain accuracy across a paragraph.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 5
+        },
+        {
+          "id": "en-skill-06",
+          "title": "Capitalization",
+          "type": "words-cap",
+          "keys": "",
+          "objective": "Shift with the opposite pinky.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-skill-07",
+          "title": "Punctuation",
+          "type": "punct",
+          "keys": ".,;:!?'\"-",
+          "objective": "Type punctuation without breaking rhythm.",
+          "targetAccuracy": 94,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-skill-08",
+          "title": "Numbers",
+          "type": "numbers",
+          "keys": "1234567890",
+          "objective": "Reach the number row.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-skill-09",
+          "title": "Symbols",
+          "type": "symbols",
+          "keys": "!@#$%^&*()-_=+",
+          "objective": "Type shifted number-row symbols.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-skill-10",
+          "title": "Shift training",
+          "type": "shift",
+          "keys": "",
+          "objective": "Alternate Shift hands correctly.",
+          "targetAccuracy": 94,
+          "targetWpm": null,
+          "estMinutes": 3
+        }
+      ]
+    },
+    {
+      "id": "en-speed",
+      "name": "Speed",
+      "lang": "en",
+      "lessons": [
+        {
+          "id": "en-speed-01",
+          "title": "Speed building",
+          "type": "words",
+          "keys": "",
+          "objective": "Push pace while staying above target accuracy.",
+          "targetAccuracy": 95,
+          "targetWpm": 30,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-speed-02",
+          "title": "Rhythm",
+          "type": "words",
+          "keys": "",
+          "objective": "Even keystroke timing.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-speed-03",
+          "title": "Consistency",
+          "type": "words",
+          "keys": "",
+          "objective": "Reduce variation in speed.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-speed-04",
+          "title": "Burst speed",
+          "type": "words",
+          "keys": "",
+          "objective": "Short high-speed sprints.",
+          "targetAccuracy": 92,
+          "targetWpm": 40,
+          "estMinutes": 2
+        },
+        {
+          "id": "en-speed-05",
+          "title": "Endurance",
+          "type": "paragraph",
+          "keys": "",
+          "objective": "Hold pace for several minutes.",
+          "targetAccuracy": 95,
+          "targetWpm": 30,
+          "estMinutes": 6
+        }
+      ]
+    },
+    {
+      "id": "en-accuracy",
+      "name": "Accuracy",
+      "lang": "en",
+      "lessons": [
+        {
+          "id": "en-accuracy-01",
+          "title": "Accuracy training",
+          "type": "words",
+          "keys": "",
+          "objective": "Slow down to reach near-perfect accuracy.",
+          "targetAccuracy": 98,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-accuracy-02",
+          "title": "Weak-key correction",
+          "type": "adaptive",
+          "keys": "",
+          "objective": "Drill your own weakest keys (uses your history).",
+          "targetAccuracy": 96,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-accuracy-03",
+          "title": "Slow-key drills",
+          "type": "adaptive",
+          "keys": "",
+          "objective": "Drill your slowest keys (uses your history).",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-accuracy-04",
+          "title": "Error elimination",
+          "type": "adaptive",
+          "keys": "",
+          "objective": "Repeat the words you recently got wrong.",
+          "targetAccuracy": 97,
+          "targetWpm": null,
+          "estMinutes": 3
+        }
+      ]
+    },
+    {
+      "id": "en-advanced",
+      "name": "Advanced",
+      "lang": "en",
+      "lessons": [
+        {
+          "id": "en-advanced-01",
+          "title": "Difficult words",
+          "type": "difficult",
+          "keys": "",
+          "objective": "Words with awkward finger sequences.",
+          "targetAccuracy": 94,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "en-advanced-02",
+          "title": "Rare letters",
+          "type": "keys",
+          "keys": "qxzjvkw",
+          "objective": "Q X Z J V K W fluency.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "en-advanced-03",
+          "title": "Mixed punctuation",
+          "type": "punct-mixed",
+          "keys": "",
+          "objective": "Words, numbers and punctuation together.",
+          "targetAccuracy": 93,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "en-advanced-04",
+          "title": "Numbers and symbols",
+          "type": "symbols-mixed",
+          "keys": "",
+          "objective": "Numeric and symbol-heavy text.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "en-advanced-05",
+          "title": "Code typing",
+          "type": "code",
+          "keys": "",
+          "objective": "Brackets, operators and indentation.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 5
+        },
+        {
+          "id": "en-advanced-06",
+          "title": "Long-form typing",
+          "type": "paragraph",
+          "keys": "",
+          "objective": "Multi-paragraph endurance.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 8
+        }
+      ]
+    },
+    {
+      "id": "hi",
+      "name": "Hindi",
+      "lang": "hi",
+      "lessons": [
+        {
+          "id": "hi-01",
+          "title": "Layout fundamentals",
+          "type": "keys-hi",
+          "keys": "home row",
+          "objective": "Home-row Devanagari keys.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "hi-02",
+          "title": "Vowels",
+          "type": "keys-hi",
+          "keys": "vowels",
+          "objective": "Independent vowels.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "hi-03",
+          "title": "Consonants",
+          "type": "keys-hi",
+          "keys": "consonants",
+          "objective": "All consonant groups.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "hi-04",
+          "title": "Matras",
+          "type": "keys-hi",
+          "keys": "matras",
+          "objective": "Vowel signs after consonants.",
+          "targetAccuracy": 90,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "hi-05",
+          "title": "Combinations",
+          "type": "keys-hi",
+          "keys": "conjuncts",
+          "objective": "Halant conjuncts like क्ष, त्र, ज्ञ.",
+          "targetAccuracy": 88,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "hi-06",
+          "title": "Words",
+          "type": "words",
+          "keys": "",
+          "objective": "Common Hindi words.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "hi-07",
+          "title": "Sentences",
+          "type": "sentences",
+          "keys": "",
+          "objective": "Hindi sentences with punctuation.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "hi-08",
+          "title": "Paragraphs",
+          "type": "paragraph",
+          "keys": "",
+          "objective": "Longer Hindi passages.",
+          "targetAccuracy": 92,
+          "targetWpm": null,
+          "estMinutes": 5
+        },
+        {
+          "id": "hi-09",
+          "title": "Speed",
+          "type": "words",
+          "keys": "",
+          "objective": "Hindi speed building.",
+          "targetAccuracy": 92,
+          "targetWpm": 20,
+          "estMinutes": 3
+        },
+        {
+          "id": "hi-10",
+          "title": "Accuracy",
+          "type": "words",
+          "keys": "",
+          "objective": "Hindi accuracy training.",
+          "targetAccuracy": 96,
+          "targetWpm": null,
+          "estMinutes": 3
+        }
+      ]
+    },
+    {
+      "id": "hinglish",
+      "name": "Hinglish",
+      "lang": "hinglish",
+      "lessons": [
+        {
+          "id": "hinglish-01",
+          "title": "Common Roman-Hindi words",
+          "type": "words",
+          "keys": "",
+          "objective": "Frequent Hinglish words.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 3
+        },
+        {
+          "id": "hinglish-02",
+          "title": "Sentences",
+          "type": "sentences",
+          "keys": "",
+          "objective": "Hinglish sentences.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "hinglish-03",
+          "title": "Conversational typing",
+          "type": "paragraph",
+          "keys": "",
+          "objective": "Chat-style Hinglish passages.",
+          "targetAccuracy": 95,
+          "targetWpm": null,
+          "estMinutes": 4
+        },
+        {
+          "id": "hinglish-04",
+          "title": "Speed practice",
+          "type": "words",
+          "keys": "",
+          "objective": "Hinglish speed building.",
+          "targetAccuracy": 94,
+          "targetWpm": 30,
+          "estMinutes": 3
+        }
+      ]
+    }
+  ]
+}

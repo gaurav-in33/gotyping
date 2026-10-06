@@ -1,0 +1,27 @@
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.tools__readout {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s4);
+  font-size: 1.1rem;
+}
+
+.tools__readout-key {
+  font-family: var(--typing-font, monospace);
+  font-weight: 700;
+}
+
+.tools__readout-arrow {
+  color: var(--muted);
+}
+
+.tools__readout-glyph {
+  font-size: 1.6rem;
+  font-weight: 700;
+}

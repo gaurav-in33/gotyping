@@ -1,0 +1,56 @@
+{
+  "status": "BETA — NOT A RELIABLE SOURCE. No official government/BIS chart or OS-shipped keyboard driver for Remington (Gail) could be found and cross-verified this session (unlike InScript, which is backed by the Windows KBDINDEV.DLL driver and the X11 in(deva) driver). Community exam-prep sites (gurukultypingskill.com, easyhindityping.com, typingwale.com) publish charts, but they disagree on details, encode multi-key conjunct sequences that cannot be verified from scraped text without risking silent corruption, and several conflate the legacy Kruti Dev/DevLys font layout with the separate Unicode 'Mangal Remington/GAIL' layout. Per docs/06 rule 1, nothing here is invented: only the digit row (which every source agrees types plain ASCII digits) is populated. Every other key is intentionally left unmapped until a citable, authoritative source is found — see docs/layout-sources.md.",
+  "layout": "remington",
+  "keys": {
+    "Digit1": {
+      "normal": "1",
+      "shift": "",
+      "verified": false
+    },
+    "Digit2": {
+      "normal": "2",
+      "shift": "",
+      "verified": false
+    },
+    "Digit3": {
+      "normal": "3",
+      "shift": "",
+      "verified": false
+    },
+    "Digit4": {
+      "normal": "4",
+      "shift": "",
+      "verified": false
+    },
+    "Digit5": {
+      "normal": "5",
+      "shift": "",
+      "verified": false
+    },
+    "Digit6": {
+      "normal": "6",
+      "shift": "",
+      "verified": false
+    },
+    "Digit7": {
+      "normal": "7",
+      "shift": "",
+      "verified": false
+    },
+    "Digit8": {
+      "normal": "8",
+      "shift": "",
+      "verified": false
+    },
+    "Digit9": {
+      "normal": "9",
+      "shift": "",
+      "verified": false
+    },
+    "Digit0": {
+      "normal": "0",
+      "shift": "",
+      "verified": false
+    }
+  }
+}

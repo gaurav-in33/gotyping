@@ -131,6 +131,23 @@ describe('settings parsing and migration', () => {
     const out = migrate({ v: 99 } as Record<string, unknown>);
     expect(out['v']).toBe(SETTINGS_VERSION);
   });
+
+  it('migrates a v2 payload: adds the Practice category (Step 2)', () => {
+    const v2 = { v: 2, typing: { defaultTime: 45 } };
+    const out = migrate({ ...v2 } as Record<string, unknown>);
+    expect(out['v']).toBe(SETTINGS_VERSION);
+    const practice = out['practice'] as Record<string, unknown>;
+    expect(practice['difficulty']).toBe('normal');
+    expect(practice['targetWpm']).toBe(40);
+    expect(practice['targetAccuracy']).toBe(95);
+  });
+
+  it('does not clobber a user Practice value already present at v2', () => {
+    const v2 = { v: 2, practice: { difficulty: 'hard' } };
+    const out = migrate({ ...v2 } as Record<string, unknown>);
+    const practice = out['practice'] as Record<string, unknown>;
+    expect(practice['difficulty']).toBe('hard');
+  });
 });
 
 // ------------------------------------------------------------------ history

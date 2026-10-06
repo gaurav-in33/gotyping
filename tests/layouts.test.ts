@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { QWERTY, indexLayout, reverseIndex } from '../src/core/layouts/qwerty';
 import { LayoutResolver, unitsFromInsertedText, type KeyLike } from '../src/core/layouts/resolver';
-import { INSCRIPT, INSCRIPT_STATUS } from '../src/core/layouts/hindi';
+import {
+  INSCRIPT,
+  INSCRIPT_DISPUTED_CODES,
+  INSCRIPT_STATUS,
+  REMINGTON,
+  REMINGTON_STATUS,
+  coveredCodes,
+  layoutById,
+} from '../src/core/layouts/hindi';
 import { fingerForCode, handOf, FINGER_BY_CODE } from '../src/core/layouts/fingers';
 
 const key = (over: Partial<KeyLike>): KeyLike => ({
@@ -95,6 +103,54 @@ describe('hindi layout honesty (docs/06)', () => {
     expect(caps.length).toBeGreaterThan(20);
     const devanagari = caps.filter((k) => /[\u0900-\u097F]/.test(k.normal));
     expect(devanagari.length).toBeGreaterThan(20);
+  });
+});
+
+describe('hindi per-key verification (docs/06 rule 2)', () => {
+  it('flags exactly the 14 disputed keys and leaves the rest verified', () => {
+    expect(INSCRIPT_DISPUTED_CODES.length).toBe(14);
+    for (const code of ['KeyZ', 'Backslash', 'KeyN', 'Period', 'Digit1', 'Digit0']) {
+      expect(INSCRIPT_DISPUTED_CODES).toContain(code);
+    }
+    // A key not in the disputed list must be explicitly verified, not just unset.
+    const home = INSCRIPT.rows.flatMap((r) => r.keys).find((k) => k.code === 'KeyA');
+    expect(home?.verified).toBe(true);
+  });
+
+  it('every mapped key carries an explicit verified flag', () => {
+    const mapped = INSCRIPT.rows.flatMap((r) => r.keys).filter((k) => k.normal);
+    for (const k of mapped) expect(typeof k.verified).toBe('boolean');
+  });
+
+  it('fixed the legacy Slash shift bug (shift must differ from the base key)', () => {
+    const slash = INSCRIPT.rows.flatMap((r) => r.keys).find((k) => k.code === 'Slash');
+    expect(slash?.shift).not.toBe(slash?.normal);
+    expect(slash?.shift).toBe('\u095f');
+  });
+
+  it('resolves via layoutById', () => {
+    expect(layoutById('inscript')).toBe(INSCRIPT);
+    expect(layoutById('remington')).toBe(REMINGTON);
+    expect(layoutById('qwerty').id).toBe('qwerty');
+  });
+});
+
+describe('remington (Beta, docs/06 rule 4)', () => {
+  it('is present as a selectable layout without inventing a key table', () => {
+    expect(REMINGTON.id).toBe('remington');
+    expect(REMINGTON.verified).toBe(false);
+    expect(REMINGTON_STATUS).toMatch(/BETA/i);
+  });
+
+  it('only the digit row is mapped — everything else is honestly left blank', () => {
+    const covered = coveredCodes(REMINGTON);
+    expect(covered.length).toBe(10);
+    for (const code of covered) expect(code.startsWith('Digit')).toBe(true);
+  });
+
+  it('every mapped key is flagged unverified', () => {
+    const mapped = REMINGTON.rows.flatMap((r) => r.keys).filter((k) => k.normal);
+    for (const k of mapped) expect(k.verified).toBe(false);
   });
 });
 

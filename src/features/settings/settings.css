@@ -160,3 +160,34 @@
     align-items: flex-start;
   }
 }
+
+.about-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.about-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.about-card__name {
+  color: var(--text);
+}
+
+.about-card__version {
+  margin-left: auto;
+  font-weight: 500;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.about-card__tagline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}

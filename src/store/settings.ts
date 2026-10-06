@@ -6,7 +6,21 @@
 import type { BackspaceMode } from '../core/engine/session';
 
 export const SETTINGS_KEY = 'gotyping:settings';
-export const SETTINGS_VERSION = 2;
+export const SETTINGS_VERSION = 3;
+
+export type PracticeDifficulty = 'easy' | 'normal' | 'hard';
+
+/**
+ * Share of generic "easy / rhythm" filler words mixed into adaptive Practice
+ * text (docs/05: "a small share (~15%) of easy words to keep rhythm").
+ * The owner asked for this to scale with difficulty: easier practice leans
+ * more on familiar words, harder practice is almost all weak-area content.
+ */
+export const EASY_WORD_SHARE: Record<PracticeDifficulty, number> = {
+  easy: 0.3,
+  normal: 0.15,
+  hard: 0.05,
+};
 
 export type AppearanceMode = 'light' | 'dark' | 'system' | 'contrast';
 export type Density = 'compact' | 'comfortable' | 'spacious';
@@ -75,6 +89,13 @@ export interface Settings {
     lightTheme: string;
     darkTheme: string;
   };
+  practice: {
+    difficulty: PracticeDifficulty;
+    adaptive: boolean;
+    targetWpm: number;
+    targetAccuracy: number;
+    sessionSeconds: number;
+  };
   data: {
     historyCap: number;
   };
@@ -121,6 +142,13 @@ export const defaultSettings: Settings = {
   language: { current: 'en' },
   a11y: { highContrast: false, largerText: false, focusVisible: true },
   theme: { appearance: 'system', lightTheme: 'paper', darkTheme: 'graphite' },
+  practice: {
+    difficulty: 'normal',
+    adaptive: true,
+    targetWpm: 40,
+    targetAccuracy: 95,
+    sessionSeconds: 60,
+  },
   data: { historyCap: 5000 },
 };
 
@@ -168,6 +196,20 @@ export const migrations: Record<number, Migration> = {
     if (!('pauseOnBlur' in typing)) typing['pauseOnBlur'] = true;
     s['typing'] = typing;
     s['v'] = 2;
+    return s;
+  },
+  /** v2 -> v3: Step 2 adds the Practice settings category (docs/01 section 9). */
+  2: (s) => {
+    if (!('practice' in s)) {
+      s['practice'] = {
+        difficulty: 'normal',
+        adaptive: true,
+        targetWpm: 40,
+        targetAccuracy: 95,
+        sessionSeconds: 60,
+      };
+    }
+    s['v'] = 3;
     return s;
   },
 };

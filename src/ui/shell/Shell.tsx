@@ -1,27 +1,110 @@
 import type { ComponentChildren } from 'preact';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { getSections, useRoute } from '../../router';
 import { Wordmark } from './Wordmark';
 import { useSettings } from '../useSettings';
 import { THEMES_BY_ID, resolveTheme } from '../theme/theme';
+
+function isActive(path: string, sectionPath: string): boolean {
+  return path === sectionPath || path.startsWith(sectionPath + '/');
+}
 
 function Nav({ className, primaryOnly }: { className: string; primaryOnly: boolean }) {
   const path = useRoute();
   const items = getSections().filter((s) => (primaryOnly ? s.primary : true));
   return (
     <nav class={className} aria-label={primaryOnly ? 'Primary' : 'Sections'}>
-      {items.map((s) => {
-        const active = path === s.path || path.startsWith(s.path + '/');
-        return (
-          <a
-            key={s.id}
+      {items.map((s) => (
+        <a
+          key={s.id}
+          class="navlink"
+          href={s.path}
+          aria-current={isActive(path, s.path) ? 'page' : undefined}
+        >
+          {s.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
+/**
+ * Mobile bottom bar: the primary sections directly, plus a "More" button for
+ * everything else (Tools today) — the desktop top nav shows every section
+ * flat, but it is hidden under 720px, so without this, secondary sections
+ * would be unreachable on a phone.
+ */
+function BottomNav() {
+  const path = useRoute();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const sections = getSections();
+  const primaryItems = sections.filter((s) => s.primary);
+  const moreItems = sections.filter((s) => !s.primary);
+  const moreActive = moreItems.some((s) => isActive(path, s.path));
+
+  // Close the sheet on an actual route change, but not on first mount —
+  // effects run on mount too, and if that happened to race a very fast
+  // click (e.g. in tests) it would silently close a sheet the user just
+  // opened before they ever saw it.
+  const prevPath = useRef(path);
+  useEffect(() => {
+    if (prevPath.current !== path) {
+      prevPath.current = path;
+      setOpen(false);
+    }
+  }, [path]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e: MouseEvent): void => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [open]);
+
+  return (
+    <nav class="bottombar" aria-label="Primary">
+      {primaryItems.map((s) => (
+        <a
+          key={s.id}
+          class="navlink"
+          href={s.path}
+          aria-current={isActive(path, s.path) ? 'page' : undefined}
+        >
+          {s.label}
+        </a>
+      ))}
+      {moreItems.length > 0 ? (
+        <div class="bottombar__more" ref={rootRef}>
+          {open ? (
+            <div class="bottombar__sheet" role="menu" aria-label="More sections">
+              {moreItems.map((s) => (
+                <a
+                  key={s.id}
+                  class="bottombar__sheet-link"
+                  role="menuitem"
+                  href={s.path}
+                  aria-current={isActive(path, s.path) ? 'page' : undefined}
+                >
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
+          <button
+            type="button"
             class="navlink"
-            href={s.path}
-            aria-current={active ? 'page' : undefined}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            aria-current={moreActive ? 'page' : undefined}
+            onClick={() => setOpen((o) => !o)}
           >
-            {s.label}
-          </a>
-        );
-      })}
+            More
+          </button>
+        </div>
+      ) : null}
     </nav>
   );
 }
@@ -92,7 +175,7 @@ export function Shell({
       <main id="main" class="page" tabIndex={-1}>
         {children}
       </main>
-      <Nav className="bottombar" primaryOnly />
+      <BottomNav />
     </div>
   );
 }

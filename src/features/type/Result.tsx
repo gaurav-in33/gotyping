@@ -10,6 +10,23 @@ export interface ResultProps {
   failed: string | null;
   onRestart: () => void;
   onNext: () => void;
+  /** When set, the result banner shows an explicit pass/fail against these targets. */
+  targetWpm?: number | null;
+  targetAccuracy?: number | null;
+}
+
+/** Pass/fail against the configured (or lesson) targets — null target = no requirement. */
+export function evaluatePass(
+  wpm: number,
+  accuracy: number,
+  targetWpm?: number | null,
+  targetAccuracy?: number | null,
+): { hasTarget: boolean; passed: boolean } {
+  const hasTarget = (targetWpm ?? null) !== null || (targetAccuracy ?? null) !== null;
+  if (!hasTarget) return { hasTarget: false, passed: true };
+  const wpmOk = targetWpm == null || wpm >= targetWpm;
+  const accOk = targetAccuracy == null || accuracy >= targetAccuracy;
+  return { hasTarget: true, passed: wpmOk && accOk };
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -28,9 +45,12 @@ export function Result({
   failed,
   onRestart,
   onNext,
+  targetWpm,
+  targetAccuracy,
 }: ResultProps) {
   const [copied, setCopied] = useState(false);
   const recordable = isRecordable(m);
+  const { hasTarget, passed } = evaluatePass(m.wpm, m.accuracy, targetWpm, targetAccuracy);
 
   const copy = async (): Promise<void> => {
     const text =
@@ -51,6 +71,17 @@ export function Result({
       {failed ? (
         <p class="toast toast--error" role="status" style={{ position: 'static', transform: 'none' }}>
           {failed}
+        </p>
+      ) : null}
+
+      {!failed && hasTarget ? (
+        <p
+          class={`result__pass result__pass--${passed ? 'ok' : 'no'}`}
+          role="status"
+        >
+          {passed ? 'Target met — pass' : 'Below target — try again'}
+          {targetWpm != null ? ` · target ${targetWpm} wpm` : ''}
+          {targetAccuracy != null ? ` · target ${targetAccuracy}% accuracy` : ''}
         </p>
       ) : null}
 

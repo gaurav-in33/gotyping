@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { BRAND } from '../../brand';
 import { LANGUAGES } from '../../content';
-import { INSCRIPT } from '../../core/layouts/hindi';
+import { HINDI_LAYOUTS, INSCRIPT, INSCRIPT_DISPUTED_CODES, layoutById } from '../../core/layouts/hindi';
 import { settingsStore } from '../../store/settings';
 import { historyRepo } from '../../store/history';
 import { idb, STORES } from '../../store/db';
@@ -10,6 +10,7 @@ import { emptyAggregates, type Aggregates, type TestRecord } from '../../store/t
 import { THEMES } from '../../ui/theme/theme';
 import { useSettings } from '../../ui/useSettings';
 import { Category, Field, Segmented, Select, Slider, Toggle } from '../../ui/components/Controls';
+import { Logo } from '../../ui/shell/Wordmark';
 import './settings.css';
 
 function ThemePicker({
@@ -369,21 +370,38 @@ export default function SettingsScreen() {
         <Field
           label="Hindi layout"
           hint={
-            INSCRIPT.verified
-              ? 'Verified against an official chart'
-              : 'Unverified legacy key map — see docs/layout-sources.md'
+            layoutById(s.keyboard.hindiLayout).verified
+              ? 'Every key cross-checked against two independent OS keyboard drivers'
+              : 'Some keys are still unconfirmed — see docs/layout-sources.md'
           }
         >
           <div class="field__control">
             <Select
               label="Hindi layout"
               value={s.keyboard.hindiLayout}
-              options={[{ id: 'inscript', label: 'InScript' }]}
+              options={HINDI_LAYOUTS.map((l) => ({ id: l.id, label: l.name }))}
               onChange={(v) => update((d) => void (d.keyboard.hindiLayout = v))}
             />
-            {!INSCRIPT.verified ? <span class="badge badge--beta">Beta</span> : null}
+            {!layoutById(s.keyboard.hindiLayout).verified ? (
+              <span class="badge badge--beta">Beta</span>
+            ) : null}
           </div>
         </Field>
+        {s.keyboard.hindiLayout === 'inscript' ? (
+          <Field
+            label="InScript dispute status"
+            hint={`${INSCRIPT_DISPUTED_CODES.length} of ${INSCRIPT.rows.flatMap((r) => r.keys).filter((k) => k.normal).length} mapped keys are unconfirmed (digit row, Period, Z, Backslash, Shift+N) — try them in Tools → Keyboard tester.`}
+          >
+            <span class="hint">See docs/layout-sources.md</span>
+          </Field>
+        ) : (
+          <Field
+            label="Remington status"
+            hint="No authoritative chart exists yet — only the digit row is mapped. Not usable for Learn/Type sessions until more keys are verified."
+          >
+            <span class="hint">See docs/layout-sources.md</span>
+          </Field>
+        )}
         <Field label="Physical layout">
           <Select
             label="Physical layout"
@@ -448,6 +466,59 @@ export default function SettingsScreen() {
         </Field>
       </Category>
 
+      <Category title="Practice">
+        <Field label="Difficulty" hint="Share of easy, rhythm-keeping words mixed into adaptive drills">
+          <Segmented
+            label="Difficulty"
+            value={s.practice.difficulty}
+            options={[
+              { id: 'easy', label: 'Easy · 30%' },
+              { id: 'normal', label: 'Normal · 15%' },
+              { id: 'hard', label: 'Hard · 5%' },
+            ]}
+            onChange={(v) => update((d) => void (d.practice.difficulty = v))}
+          />
+        </Field>
+        <Field label="Adaptive practice" hint="Weight drills toward your weak keys/words automatically">
+          <Toggle
+            label="Adaptive practice"
+            checked={s.practice.adaptive}
+            onChange={(v) => update((d) => void (d.practice.adaptive = v))}
+          />
+        </Field>
+        <Field label="Target WPM" hint="Used for the pass/fail banner at the end of a test">
+          <Slider
+            label="Target WPM"
+            value={s.practice.targetWpm}
+            min={10}
+            max={150}
+            step={5}
+            onChange={(v) => update((d) => void (d.practice.targetWpm = v))}
+          />
+        </Field>
+        <Field label="Target accuracy" hint="Used for the pass/fail banner at the end of a test">
+          <Slider
+            label="Target accuracy"
+            value={s.practice.targetAccuracy}
+            min={70}
+            max={100}
+            suffix="%"
+            onChange={(v) => update((d) => void (d.practice.targetAccuracy = v))}
+          />
+        </Field>
+        <Field label="Session length" hint="Default duration for a recommended Practice drill">
+          <Slider
+            label="Session length"
+            value={s.practice.sessionSeconds}
+            min={15}
+            max={300}
+            step={15}
+            suffix="s"
+            onChange={(v) => update((d) => void (d.practice.sessionSeconds = v))}
+          />
+        </Field>
+      </Category>
+
       <Category title="Data">
         <Field label="History limit" hint="Oldest tests are dropped past this count">
           <Slider
@@ -490,14 +561,31 @@ export default function SettingsScreen() {
             Reset
           </button>
         </Field>
-        <Field label="Clear all local data" hint="Deletes every saved test and statistic">
+        <Field label="Reset stats" hint="Clears test history and aggregates; keeps lesson progress and settings">
           <button
             class="btn btn--sm"
             type="button"
             onClick={async () => {
-              if (!confirm('Delete all saved tests and statistics? This cannot be undone.')) return;
+              if (!confirm('Reset all test history and statistics? This cannot be undone.')) return;
               await historyRepo.clear();
               await idb.clear(STORES.aggregates);
+              say('Stats reset.');
+            }}
+          >
+            Reset stats
+          </button>
+        </Field>
+        <Field label="Clear all local data" hint="Deletes every saved test, statistic and lesson's progress">
+          <button
+            class="btn btn--sm"
+            type="button"
+            onClick={async () => {
+              if (!confirm('Delete all saved tests, statistics and lesson progress? This cannot be undone.')) {
+                return;
+              }
+              await historyRepo.clear();
+              await idb.clear(STORES.aggregates);
+              await idb.clear(STORES.lessons);
               say('All local data cleared.');
             }}
           >
@@ -517,9 +605,25 @@ export default function SettingsScreen() {
       </Category>
 
       <Category title="About">
-        <Field label={BRAND.name} hint={BRAND.tagline}>
-          <span class="hint">v{BRAND.version}</span>
-        </Field>
+        <div class="about-card">
+          <div class="about-card__head">
+            <Logo size={28} />
+            <span class="about-card__name">
+              Go<span style="color:var(--muted)">Typing</span>
+            </span>
+            <span class="about-card__version">v{BRAND.version}</span>
+          </div>
+          <p class="about-card__tagline">{BRAND.tagline}</p>
+          <p class="hint">
+            A from-scratch typing coach: Type, Learn, Practice and Stats for English and
+            Hindi, built with an original wordmark and a brand-new codebase.
+          </p>
+          <ul class="privacy-list">
+            <li>English (QWERTY) and Hindi (InScript, Remington Beta) layouts.</li>
+            <li>Adaptive Practice learns from your own typing — never anyone else's.</li>
+            <li>Everything above runs and stays on this device. See Privacy, below.</li>
+          </ul>
+        </div>
       </Category>
 
       {toast ? (

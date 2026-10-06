@@ -1,0 +1,253 @@
+{
+  "status": "LEGACY, UNVERIFIED. Built from memory in the old project. Verify every key against an authoritative Inscript chart before shipping. KeyZ was added late and is explicitly unverified.",
+  "layout": "inscript",
+  "keys": {
+    "Digit1": {
+      "normal": "१",
+      "shift": "!",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit2": {
+      "normal": "२",
+      "shift": "@",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit3": {
+      "normal": "३",
+      "shift": "#",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit4": {
+      "normal": "४",
+      "shift": "$",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit5": {
+      "normal": "५",
+      "shift": "%",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit6": {
+      "normal": "६",
+      "shift": "^",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit7": {
+      "normal": "७",
+      "shift": "&",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit8": {
+      "normal": "८",
+      "shift": "*",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit9": {
+      "normal": "९",
+      "shift": "(",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "Digit0": {
+      "normal": "०",
+      "shift": ")",
+      "verified": false,
+      "note": "Base character is platform-dependent: Windows KBDINDEV.DLL types plain ASCII \"1\" here (Devanagari needs digit-shaping); the X11 \"in(deva)\" driver and this legacy table type the Devanagari digit here instead. Kept as shipped (Devanagari digit) but flagged."
+    },
+    "KeyQ": {
+      "normal": "ौ",
+      "shift": "औ",
+      "verified": true
+    },
+    "KeyW": {
+      "normal": "ै",
+      "shift": "ऐ",
+      "verified": true
+    },
+    "KeyE": {
+      "normal": "ा",
+      "shift": "आ",
+      "verified": true
+    },
+    "KeyR": {
+      "normal": "ी",
+      "shift": "ई",
+      "verified": true
+    },
+    "KeyT": {
+      "normal": "ू",
+      "shift": "ऊ",
+      "verified": true
+    },
+    "KeyY": {
+      "normal": "ब",
+      "shift": "भ",
+      "verified": true
+    },
+    "KeyU": {
+      "normal": "ह",
+      "shift": "ङ",
+      "verified": true
+    },
+    "KeyI": {
+      "normal": "ग",
+      "shift": "घ",
+      "verified": true
+    },
+    "KeyO": {
+      "normal": "द",
+      "shift": "ध",
+      "verified": true
+    },
+    "KeyP": {
+      "normal": "ज",
+      "shift": "झ",
+      "verified": true
+    },
+    "BracketLeft": {
+      "normal": "ड",
+      "shift": "ढ",
+      "verified": true
+    },
+    "BracketRight": {
+      "normal": "़",
+      "shift": "ञ",
+      "verified": true
+    },
+    "KeyA": {
+      "normal": "ो",
+      "shift": "ओ",
+      "verified": true
+    },
+    "KeyS": {
+      "normal": "े",
+      "shift": "ए",
+      "verified": true
+    },
+    "KeyD": {
+      "normal": "्",
+      "shift": "अ",
+      "verified": true
+    },
+    "KeyF": {
+      "normal": "ि",
+      "shift": "इ",
+      "verified": true
+    },
+    "KeyG": {
+      "normal": "ु",
+      "shift": "उ",
+      "verified": true
+    },
+    "KeyH": {
+      "normal": "प",
+      "shift": "फ",
+      "verified": true
+    },
+    "KeyJ": {
+      "normal": "र",
+      "shift": "ऱ",
+      "verified": true
+    },
+    "KeyK": {
+      "normal": "क",
+      "shift": "ख",
+      "verified": true
+    },
+    "KeyL": {
+      "normal": "त",
+      "shift": "थ",
+      "verified": true
+    },
+    "Semicolon": {
+      "normal": "च",
+      "shift": "छ",
+      "verified": true
+    },
+    "Quote": {
+      "normal": "ट",
+      "shift": "ठ",
+      "verified": true
+    },
+    "KeyX": {
+      "normal": "ं",
+      "shift": "ँ",
+      "verified": true
+    },
+    "KeyC": {
+      "normal": "म",
+      "shift": "ण",
+      "verified": true
+    },
+    "KeyV": {
+      "normal": "न",
+      "shift": "न",
+      "verified": true
+    },
+    "KeyB": {
+      "normal": "व",
+      "shift": "व",
+      "verified": true
+    },
+    "KeyN": {
+      "normal": "ल",
+      "shift": "ळ",
+      "verified": false,
+      "note": "Cross-checked against Windows KBDINDEV.DLL, X11 in(deva) and a community chart — all three agree on the value shipped here. Kept Beta pending hands-on confirmation; flagged because the owner's prior (lost) session reported this key as disputed and that investigation could not be recovered."
+    },
+    "KeyM": {
+      "normal": "स",
+      "shift": "श",
+      "verified": true
+    },
+    "Comma": {
+      "normal": ",",
+      "shift": "ष",
+      "verified": true
+    },
+    "Period": {
+      "normal": ".",
+      "shift": "।",
+      "verified": false,
+      "note": "Shift value (।) matches both Windows and X11 official drivers, but several community exam-prep charts (e.g. jptyping.com) show the double danda (॥) instead. Kept as shipped (।) but flagged pending the owner confirming on a real exam-approved IME."
+    },
+    "Slash": {
+      "normal": "य",
+      "shift": "य़",
+      "verified": true,
+      "note": "Fixed a copy/paste bug carried over from the legacy file: shift produced the same character as the base key. Corrected to य़ (U+095F) per Windows KBDINDEV.DLL, X11 in(deva) and jptyping.com, which all agree."
+    },
+    "KeyZ": {
+      "normal": "ॆ",
+      "shift": "ऎ",
+      "verified": false,
+      "note": "The legacy file itself was unverified (\"KeyZ was added late\"). Cross-checked against Windows KBDINDEV.DLL and the X11 in(deva) layout — both agree with the value shipped here. Kept Beta pending hands-on confirmation via the Keyboard tester (docs/06 rule 5)."
+    },
+    "Minus": {
+      "normal": "-",
+      "shift": "ः",
+      "verified": true,
+      "note": "Added from Windows KBDINDEV.DLL / X11 in(deva) (both agree): base \"-\", shift ः (visarga)."
+    },
+    "Equal": {
+      "normal": "ृ",
+      "shift": "ऋ",
+      "verified": true,
+      "note": "Added from Windows KBDINDEV.DLL / X11 in(deva) (both agree): base ृ (vocalic R matra), shift ऋ (vocalic R letter)."
+    },
+    "Backslash": {
+      "normal": "ॉ",
+      "shift": "ऑ",
+      "verified": false,
+      "note": "Not present in the original legacy table; added from Windows KBDINDEV.DLL / X11 in(deva) (both agree: base ॉ candra-O matra, shift ऑ candra-O letter). Flagged pending hands-on confirmation because the owner's prior (lost) session reported this key as disputed and that investigation could not be recovered."
+    }
+  }
+}

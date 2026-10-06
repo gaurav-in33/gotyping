@@ -5,7 +5,7 @@ import { isRecordable } from '../../core/engine/metrics';
 import { buildText } from '../../core/text/generators';
 import { LayoutResolver, unitsFromInsertedText } from '../../core/layouts/resolver';
 import { QWERTY } from '../../core/layouts/qwerty';
-import { INSCRIPT } from '../../core/layouts/hindi';
+import { isFunctional, layoutById } from '../../core/layouts/hindi';
 import { loadLanguage, type LanguagePack } from '../../content';
 import { useSettings } from '../../ui/useSettings';
 import { historyRepo, makeTestRecord, personalBest } from '../../store/history';
@@ -69,10 +69,12 @@ export default function TypeScreen() {
   }, [lang]);
 
   // Hindi resolves from the physical key; Latin trusts event.key.
+  const hindiLayout = useMemo(() => layoutById(settings.keyboard.hindiLayout), [settings.keyboard.hindiLayout]);
+  const hindiFunctional = isFunctional(hindiLayout);
   useEffect(() => {
-    const useHindi = lang === 'hi' && settings.keyboard.hindiLayout === 'inscript';
-    resolverRef.current.setLayout(useHindi ? INSCRIPT : QWERTY);
-  }, [lang, settings.keyboard.hindiLayout]);
+    const useHindi = lang === 'hi' && hindiFunctional;
+    resolverRef.current.setLayout(useHindi ? hindiLayout : QWERTY);
+  }, [lang, hindiLayout, hindiFunctional]);
 
   // ------------------------------------------------------------ build text
   const makeText = useCallback(
@@ -431,6 +433,8 @@ export default function TypeScreen() {
         failed={failed}
         onRestart={() => resetTest()}
         onNext={() => setSeed(Date.now())}
+        targetWpm={settings.practice.targetWpm}
+        targetAccuracy={settings.practice.targetAccuracy}
       />
     );
   }
@@ -446,6 +450,14 @@ export default function TypeScreen() {
         updateSettings={updateSettings}
         hidden={phase === 'typing' && settings.display.focusMode}
       />
+
+      {lang === 'hi' && !hindiFunctional ? (
+        <p class="panel empty-state" role="status" style={{ padding: '10px 14px' }}>
+          {hindiLayout.name} is Beta and not wired into typing yet — only its digit row is
+          mapped. Switch to InScript in Settings, or try the on-screen reference in Tools →
+          Keyboard tester.
+        </p>
+      ) : null}
 
       <LiveStats v={live} settings={settings} />
 
