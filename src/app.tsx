@@ -11,6 +11,13 @@ import {
 } from './router';
 import { useAppliedSettings, useSettings } from './ui/useSettings';
 
+// Dev-only console seed hook (window.gotypingSeed) for manually checking
+// Stats with empty/small/large histories. Tree-shaken out of production
+// builds; never imported by, or exposed in, any shipped screen.
+if (import.meta.env.DEV) {
+  void import('./dev/devTools');
+}
+
 /**
  * Section registry. Only built sections are registered, so the navigation can
  * never show a dead link or a placeholder screen (AGENT.md).

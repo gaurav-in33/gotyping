@@ -561,14 +561,31 @@ export default function SettingsScreen() {
             Reset
           </button>
         </Field>
-        <Field label="Clear all local data" hint="Deletes every saved test and statistic">
+        <Field label="Reset stats" hint="Clears test history and aggregates; keeps lesson progress and settings">
           <button
             class="btn btn--sm"
             type="button"
             onClick={async () => {
-              if (!confirm('Delete all saved tests and statistics? This cannot be undone.')) return;
+              if (!confirm('Reset all test history and statistics? This cannot be undone.')) return;
               await historyRepo.clear();
               await idb.clear(STORES.aggregates);
+              say('Stats reset.');
+            }}
+          >
+            Reset stats
+          </button>
+        </Field>
+        <Field label="Clear all local data" hint="Deletes every saved test, statistic and lesson's progress">
+          <button
+            class="btn btn--sm"
+            type="button"
+            onClick={async () => {
+              if (!confirm('Delete all saved tests, statistics and lesson progress? This cannot be undone.')) {
+                return;
+              }
+              await historyRepo.clear();
+              await idb.clear(STORES.aggregates);
+              await idb.clear(STORES.lessons);
               say('All local data cleared.');
             }}
           >
