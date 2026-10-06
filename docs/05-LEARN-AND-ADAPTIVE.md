@@ -7,7 +7,7 @@ Source outline: `data/curriculum-outline.json` (8 categories, 53 lessons; the ou
 - Lesson length: 60–90 s of typing or a fixed character count; short and focused. Show an "intro card" (finger positions, tip) before the first attempt of keys lessons.
 - Pass rule: `accuracy ≥ targetAccuracy` and (if set) `wpm ≥ targetWpm`, minimum ~30 keystrokes. Record best accuracy, best WPM, attempts, completed flag. Stars/medals optional and subtle (none is fine).
 - Progression: everything unlocked (the owner wants free navigation), but show a clear **Continue** recommendation (first unfinished lesson), per-category progress bars, and a "Practice weak areas" button after each lesson that opens Practice with that lesson's weak keys.
-- Finger guide: on-screen keyboard highlights the next key and its finger (colors from tokens, not hard-coded), with hand outlines optional. Works for English layouts and for the selected Hindi layout.
+- Keyboard guide: display-only physical keyboard highlights the next key and its finger (colors from tokens, not hard-coded), plus Shift when needed. Works for English layouts and for the selected Hindi layout; optional tap-to-type remains off by default.
 - Hindi lessons use whichever Hindi layout is selected; text content stays Unicode and independent of layout.
 
 ## Adaptive engine (one engine, many profiles)

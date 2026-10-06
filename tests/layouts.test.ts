@@ -85,6 +85,11 @@ describe('devanagari resolver', () => {
     expect(r.resolve(key({ key: ' ', code: 'Space' }))).toEqual({ kind: 'char', unit: ' ' });
   });
 
+  it('never falls back to literal Latin for an unmapped Hindi key', () => {
+    expect(r.resolve(key({ key: '`', code: 'Backquote' }))).toEqual({ kind: 'ignore' });
+    expect(r.resolveSoftText('`')).toEqual([]);
+  });
+
   it('reports the script', () => {
     expect(r.script).toBe('devanagari');
   });
@@ -158,6 +163,19 @@ describe('soft keyboard input', () => {
   it('splits inserted text into NFC code-point units', () => {
     expect(unitsFromInsertedText('hi')).toEqual(['h', 'i']);
     expect(unitsFromInsertedText('कि')).toEqual(['क', 'ि']);
+  });
+
+  it('uses the same Hindi physical-key table for English-QWERTY soft input', () => {
+    const r = new LayoutResolver(INSCRIPT);
+    expect(r.resolveSoftText('k')).toEqual(['क']);
+    expect(r.resolveSoftText('K')).toEqual(['ख']);
+    expect(r.resolveSoftText('ke')).toEqual(['क', 'ा']);
+    expect(r.resolveSoftText('1>')).toEqual(['१', '।']);
+  });
+
+  it('does not map an already-Devanagari character a second time', () => {
+    const r = new LayoutResolver(INSCRIPT);
+    expect(r.resolveSoftText('का')).toEqual(['क', 'ा']);
   });
 });
 

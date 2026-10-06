@@ -1,6 +1,43 @@
 # Changelog
 
-## Step 3 — Tools, theme builder, fun modes, offline mode, on-screen keyboard
+## October 2026 — Hindi phone input and display-only keyboard guide
+
+### Fixed
+
+- **Hindi Gboard/iOS path:** `KeyboardInputReader` now maps an inserted
+  English-QWERTY character back to its physical QWERTY key and then through
+  the same InScript/Remington key table used by USB/Bluetooth `keydown`.
+  `k` therefore becomes **क**, `K` becomes **ख**, and `k` + `e` becomes
+  **का** — no Latin character is admitted into a Hindi typing session.
+- The reader prefers `beforeinput`, falls back to an `input` value diff for
+  Android 229 / `Unidentified` events, handles composition drafts/commit
+  echoes once, clears the hidden field after every completed press, and
+  suppresses an input event paired with a handled physical keydown.
+- A direct Devanagari IME result is accepted as-is and is never remapped.
+
+### Added
+
+- **Tools → Phone keyboard test**, a real-device event inspector showing
+  `key`, `code`, `data`, `inputType`, `isComposing`, `keyCode`, and the final
+  unit produced by the shared reader.
+- **Keyboard guide** in Type, Learn, Practice and Settings: normal + Shift
+  labels, next-key/finger color, and Shift highlighting. It is display-only
+  by default; the optional global **Tap guide to type** setting restores the
+  old tap-to-type behavior.
+- A global **Guide: Show / Hide** preference (default Show), a compact
+  `visualViewport`-aware phone layout, and Settings schema migration v5.
+- jsdom coverage for Gboard-style beforeinput/input, uppercase first letter,
+  conjuncts, composition, direct Devanagari input, backspace, word skip,
+  punctuation/digits, and duplicate physical+input suppression.
+
+### Documentation
+
+- `docs/TEST-ON-DEVICE.md` now has exact Android Gboard/iOS configuration and
+  real-device acceptance steps.
+- `docs/layout-sources.md` documents the one-table phone mapping and its
+  inherited InScript verification status.
+
+## Step 3 — Tools, theme builder, fun modes, offline mode, original on-screen keyboard (later replaced)
 
 ### Added
 
@@ -51,16 +88,13 @@ in `ToolsScreen.tsx`:
 
 **On-screen keyboard**
 
-- `src/features/type/OnScreenKeyboard.tsx` — renders under the Type screen's
-  input when Settings → "On-screen keyboard" is on. Reuses the same
-  `KeyboardDiagram` as the keyboard tester and heatmap. Lights up the next
-  expected key when "Highlight next key" is on, can hide glyphs entirely when
-  "Key labels" is off (for drilling recall instead of reading), and supports
-  tap-to-type for touch users (taps feed the engine the same way a keystroke
-  does).
+- Historical note: this step introduced an interactive `OnScreenKeyboard.tsx`.
+  It was replaced in October 2026 by the shared display-only `KeyboardGuide`
+  (global Show/Hide, normal + Shift layers, optional tap-to-type disabled by
+  default), so the old file no longer ships.
 - `src/core/layouts/registry.ts` — new `ALL_LAYOUTS` / `layoutByAnyId()`,
   a single place that resolves a settings layout id to its table, now shared
-  by the Keyboard tester, the on-screen keyboard and the Learn finger guide
+  by the Keyboard tester, the keyboard guide and the Learn finger guide
   instead of three separate lookups.
 - Fixed a real bug while building this: `FingerGuide` was hardcoded to QWERTY
   regardless of the lesson's language or the user's physical-layout setting.
@@ -97,8 +131,8 @@ mid-session restarts cleanly.
 **Tests** — grew from 142 (Step 1) to 270, covering adaptive planning,
 progress/XP/streaks/achievements, lessons, generators, layouts, backup,
 stats, metrics, tools, fun modes, lesson progress, fake-history seeding, and
-an expanded DOM integration suite (now also exercising the on-screen keyboard
-and the new Settings toggles end-to-end with real events).
+an expanded DOM integration suite (now exercising the replacement keyboard guide
+and its Settings toggles end-to-end with real events).
 
 ### Known limitations (unchanged from Step 1, reconfirmed this step)
 

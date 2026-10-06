@@ -5,13 +5,15 @@ import { TextTools } from './TextTools';
 import { HindiTools } from './HindiTools';
 import { ExamPractice } from './ExamPractice';
 import { Productivity } from './Productivity';
+import { PhoneKeyboardTest } from './PhoneKeyboardTest';
 import './tools.css';
 
-type Tab = 'calculators' | 'keyboard' | 'text' | 'hindi' | 'exam' | 'productivity';
+type Tab = 'calculators' | 'keyboard' | 'phone-keyboard' | 'text' | 'hindi' | 'exam' | 'productivity';
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: 'calculators', label: 'Typing utilities' },
   { id: 'keyboard', label: 'Keyboard' },
+  { id: 'phone-keyboard', label: 'Phone keyboard test' },
   { id: 'text', label: 'Text tools' },
   { id: 'hindi', label: 'Hindi / Indian' },
   { id: 'exam', label: 'Exam practice' },
@@ -58,6 +60,7 @@ export default function ToolsScreen() {
             <KeyboardTesterPanel />
           </div>
         ) : null}
+        {tab === 'phone-keyboard' ? <PhoneKeyboardTest /> : null}
         {tab === 'text' ? <TextTools /> : null}
         {tab === 'hindi' ? <HindiTools /> : null}
         {tab === 'exam' ? <ExamPractice /> : null}

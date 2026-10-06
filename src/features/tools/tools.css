@@ -73,8 +73,9 @@
 }
 
 .calc__result strong {
-  font-size: 1.3rem;
   color: var(--accent);
+  font-size: 1.3rem;
+  display: block;
 }
 
 .calc__textarea {
@@ -132,4 +133,52 @@
   display: flex;
   flex-direction: column;
   gap: var(--s4);
+}
+
+/* Tools → Phone keyboard test: intentionally dense, selectable diagnostics. */
+.tools__phone-input {
+  width: min(100%, 28rem) !important;
+  padding: var(--s3);
+  border: 2px solid var(--accent);
+  border-radius: var(--r-control);
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--typing-font, monospace);
+  font-size: 1rem;
+}
+
+.tools__phone-output,
+.tools__phone-final {
+  font-family: var(--typing-font, monospace);
+  font-weight: 700;
+}
+
+.phone-keyboard-test__events {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-control);
+  background: var(--panel);
+}
+
+.phone-keyboard-test table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+
+.phone-keyboard-test th,
+.phone-keyboard-test td {
+  padding: var(--s2);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.phone-keyboard-test th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  color: var(--muted);
 }

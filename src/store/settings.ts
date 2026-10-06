@@ -6,7 +6,7 @@
 import type { BackspaceMode } from '../core/engine/session';
 
 export const SETTINGS_KEY = 'gotyping:settings';
-export const SETTINGS_VERSION = 4;
+export const SETTINGS_VERSION = 5;
 
 export type PracticeDifficulty = 'easy' | 'normal' | 'hard';
 export type ProgressionMode = 'full' | 'minimal' | 'off';
@@ -66,7 +66,6 @@ export interface Settings {
     smoothCaret: boolean;
     density: Density;
     focusMode: boolean;
-    showKeyboard: boolean;
     textAlign: TextAlign;
     textOpacity: number;
     smoothScroll: boolean;
@@ -89,6 +88,10 @@ export interface Settings {
     fingerGuide: boolean;
     highlightNextKey: boolean;
     showKeyLabels: boolean;
+    /** Display-first keyboard reference, shared across all typing screens. */
+    guideVisible: boolean;
+    /** Optional legacy behavior; off means guide taps never type. */
+    tapGuideToType: boolean;
   };
   language: {
     current: LanguageId;
@@ -144,7 +147,6 @@ export const defaultSettings: Settings = {
     smoothCaret: true,
     density: 'comfortable',
     focusMode: true,
-    showKeyboard: false,
     textAlign: 'center',
     textOpacity: 100,
     smoothScroll: true,
@@ -157,6 +159,8 @@ export const defaultSettings: Settings = {
     fingerGuide: true,
     highlightNextKey: true,
     showKeyLabels: true,
+    guideVisible: true,
+    tapGuideToType: false,
   },
   language: { current: 'en' },
   a11y: { highContrast: false, largerText: false, focusVisible: true },
@@ -255,6 +259,20 @@ export const migrations: Record<number, Migration> = {
     s['display'] = display;
 
     s['v'] = 4;
+    return s;
+  },
+  /**
+   * v4 -> v5: replace the old tap-to-type on-screen keyboard preference with
+   * a global display-only guide. Existing users who explicitly showed the old
+   * keyboard keep its tap behavior; new/default users see the guide safely.
+   */
+  4: (s) => {
+    const keyboard = (s['keyboard'] as Record<string, unknown> | undefined) ?? {};
+    const display = (s['display'] as Record<string, unknown> | undefined) ?? {};
+    if (!('guideVisible' in keyboard)) keyboard['guideVisible'] = true;
+    if (!('tapGuideToType' in keyboard)) keyboard['tapGuideToType'] = display['showKeyboard'] === true;
+    s['keyboard'] = keyboard;
+    s['v'] = 5;
     return s;
   },
 };

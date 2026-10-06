@@ -3,7 +3,7 @@ import { Session, defaultSessionConfig } from '../../core/engine/session';
 import type { Metrics } from '../../core/engine/metrics';
 import { isRecordable } from '../../core/engine/metrics';
 import { buildText } from '../../core/text/generators';
-import { LayoutResolver, unitsFromInsertedText } from '../../core/layouts/resolver';
+import { KeyboardInputReader } from '../../core/input/keyboard-reader';
 import { QWERTY } from '../../core/layouts/qwerty';
 import { isFunctional, layoutById } from '../../core/layouts/hindi';
 import { loadLanguage, type LanguagePack } from '../../content';
@@ -18,7 +18,7 @@ import { TextRenderer } from './TextRenderer';
 import { ConfigBar, summarize, type TestConfig } from './ConfigBar';
 import { LiveStats, type LiveValues } from './LiveStats';
 import { Result } from './Result';
-import { OnScreenKeyboard } from './OnScreenKeyboard';
+import { KeyboardGuide } from './KeyboardGuide';
 import { layoutByAnyId } from '../../core/layouts/registry';
 import type { FunModeId } from '../../core/fun/modes';
 import { randomizeCase } from '../../core/fun/textFx';
@@ -86,7 +86,10 @@ export default function TypeScreen() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const rendererRef = useRef<TextRenderer | null>(null);
   const sessionRef = useRef<Session | null>(null);
-  const resolverRef = useRef<LayoutResolver>(new LayoutResolver(QWERTY));
+  const readerRef = useRef<KeyboardInputReader | null>(null);
+  if (!readerRef.current) {
+    readerRef.current = new KeyboardInputReader(QWERTY, { onUnit: () => {}, onBackspace: () => {} });
+  }
   const unitCountRef = useRef(0);
 
   // ---------------------------------------------------------- content load
@@ -123,7 +126,7 @@ export default function TypeScreen() {
   );
   useEffect(() => {
     const useHindi = lang === 'hi' && hindiFunctional;
-    resolverRef.current.setLayout(useHindi ? hindiLayout : QWERTY);
+    readerRef.current?.setLayout(useHindi ? hindiLayout : QWERTY);
   }, [lang, hindiLayout, hindiFunctional]);
 
   // ------------------------------------------------------------ build text
@@ -485,6 +488,7 @@ export default function TypeScreen() {
       }
       r.update(sess.getStates(), sess.getPos());
     }
+    setNextChar(sess.getUnits()[sess.getPos()] ?? null);
   }, []);
 
   const back = useCallback(() => {
@@ -493,7 +497,13 @@ export default function TypeScreen() {
     if (!sess) return;
     sess.handleBackspace(now());
     if (r) r.update(sess.getStates(), sess.getPos());
+    setNextChar(sess.getUnits()[sess.getPos()] ?? null);
   }, []);
+
+  // This is the sole route for both hardware and phone input. The reader owns
+  // Android's beforeinput/input fallback and its physical-key double-count
+  // guard; Type only retains app-level Escape / optional Tab semantics.
+  readerRef.current.setHandlers({ onUnit: feed, onBackspace: back, onEnter: () => feed('\n') });
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -507,38 +517,9 @@ export default function TypeScreen() {
         (e.target as HTMLElement).blur();
         return;
       }
-      const out = resolverRef.current.resolve(e);
-      if (out.kind === 'char') {
-        e.preventDefault();
-        feed(out.unit);
-      } else if (out.kind === 'backspace') {
-        e.preventDefault();
-        back();
-      } else if (out.kind === 'enter') {
-        e.preventDefault();
-        feed('\n');
-      }
+      readerRef.current?.onKeyDown(e);
     },
-    [feed, back, phase, settings.typing.tabRestarts],
-  );
-
-  /** Soft keyboards do not emit usable keydown — handle beforeinput instead. */
-  const onBeforeInput = useCallback(
-    (e: InputEvent) => {
-      if (phase === 'done') return;
-      const type = e.inputType;
-      if (type === 'insertText' && typeof e.data === 'string') {
-        e.preventDefault();
-        for (const u of unitsFromInsertedText(e.data)) feed(u);
-      } else if (type === 'deleteContentBackward') {
-        e.preventDefault();
-        back();
-      } else if (type === 'insertLineBreak' || type === 'insertParagraph') {
-        e.preventDefault();
-        feed('\n');
-      }
-    },
-    [feed, back, phase],
+    [phase, settings.typing.tabRestarts],
   );
 
   // Make the on-screen hint true: any printable key focuses the input.
@@ -673,25 +654,26 @@ export default function TypeScreen() {
         autocorrect="off"
         spellcheck={false}
         aria-label="Typing input"
-        value=""
         onKeyDown={onKeyDown}
-        onBeforeInput={onBeforeInput as unknown as (e: Event) => void}
+        onBeforeInput={(e) => readerRef.current?.onBeforeInput(e as unknown as InputEvent)}
+        onInput={(e) => readerRef.current?.onInput(e as unknown as InputEvent)}
+        onCompositionStart={(e) => readerRef.current?.onCompositionStart(e as unknown as CompositionEvent)}
+        onCompositionUpdate={(e) => readerRef.current?.onCompositionUpdate(e as unknown as CompositionEvent)}
+        onCompositionEnd={(e) => readerRef.current?.onCompositionEnd(e as unknown as CompositionEvent)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
       />
 
-      {settings.display.showKeyboard ? (
-        <OnScreenKeyboard
-          layout={activeLayout}
-          nextChar={nextChar}
-          highlightNextKey={settings.keyboard.highlightNextKey}
-          showKeyLabels={settings.keyboard.showKeyLabels}
-          onTap={(ch) => {
-            feed(ch);
-            focusInput();
-          }}
-        />
-      ) : null}
+      <KeyboardGuide
+        layout={lang === 'hi' ? hindiLayout : activeLayout}
+        nextChar={nextChar}
+        visible={settings.keyboard.guideVisible}
+        onVisibleChange={(v) => updateSettings((d) => void (d.keyboard.guideVisible = v))}
+        highlightNextKey={settings.keyboard.highlightNextKey}
+        showKeyLabels={settings.keyboard.showKeyLabels}
+        tapToType={settings.keyboard.tapGuideToType}
+        onTap={settings.keyboard.tapGuideToType ? feed : undefined}
+      />
 
       <div class="type__actions">
         <button

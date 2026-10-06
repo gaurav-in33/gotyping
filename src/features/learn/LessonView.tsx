@@ -6,7 +6,6 @@ import { loadCurriculum, lessonById, nextLesson, type Course, type Lesson } from
 import { buildLessonText } from '../../core/text/lessons';
 import { loadLanguage, type LanguagePack } from '../../content';
 import { isFunctional, layoutById } from '../../core/layouts/hindi';
-import { QWERTY } from '../../core/layouts/qwerty';
 import { layoutByAnyId } from '../../core/layouts/registry';
 import { useSettings } from '../../ui/useSettings';
 import { TypingBox } from '../type/TypingBox';
@@ -184,7 +183,7 @@ export function LessonView({ lessonId }: { lessonId: string }) {
           <TypingBox
             text={generated.text}
             resetToken={attempt}
-            layout={useHindi ? hindiLayout : QWERTY}
+            layout={useHindi ? hindiLayout : layoutByAnyId(settings.keyboard.physicalLayout)}
             onComplete={onComplete}
           />
           <div class="type__actions">

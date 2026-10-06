@@ -148,6 +148,15 @@ describe('settings parsing and migration', () => {
     const practice = out['practice'] as Record<string, unknown>;
     expect(practice['difficulty']).toBe('hard');
   });
+
+  it('migrates the legacy on-screen keyboard into a visible guide with optional tapping', () => {
+    const out = migrate({ v: 4, display: { showKeyboard: true }, keyboard: {} });
+    const keyboard = out['keyboard'] as Record<string, unknown>;
+    expect(keyboard['guideVisible']).toBe(true);
+    expect(keyboard['tapGuideToType']).toBe(true);
+    expect(parseSettings(JSON.stringify({ v: 4, display: { showKeyboard: false } })).keyboard.guideVisible).toBe(true);
+    expect(defaultSettings.keyboard.tapGuideToType).toBe(false);
+  });
 });
 
 // ------------------------------------------------------------------ history
