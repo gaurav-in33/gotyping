@@ -138,6 +138,13 @@ export default function SettingsScreen() {
                 onChange={(v) => update((d) => void (d.typing.capitalization = v))}
               />
             </Field>
+            <Field label="Auto restart" hint="Start a fresh test automatically a moment after you finish one">
+              <Toggle
+                label="Auto restart"
+                checked={s.typing.autoRestart}
+                onChange={(v) => update((d) => void (d.typing.autoRestart = v))}
+              />
+            </Field>
           </>
         }
       >
@@ -279,7 +286,7 @@ export default function SettingsScreen() {
             </Field>
             <Field label="Live stats shown">
               <div class="field__control">
-                {(['wpm', 'accuracy', 'errors', 'timer', 'progress'] as const).map((k) => (
+                {(['wpm', 'accuracy', 'errors', 'timer', 'progress', 'words'] as const).map((k) => (
                   <label
                     key={k}
                     style={{ display: 'flex', gap: '4px', alignItems: 'center', fontSize: '.82rem' }}

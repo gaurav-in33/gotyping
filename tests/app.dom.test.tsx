@@ -14,6 +14,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'preact';
+import { settingsStore } from '../src/store/settings';
 
 // --- Browser APIs jsdom does not implement -------------------------------
 class RO {
@@ -76,6 +77,23 @@ async function waitFor(sel: string, timeoutMs = 4000): Promise<Element> {
   throw new Error(`timed out waiting for ${sel}`);
 }
 
+/**
+ * Wait for an arbitrary predicate over the DOM, e.g. "the text actually
+ * changed to the new language/style", not just "some .u elements exist".
+ * A fixed tick count (`settle(n)`) is not reliable across a multi-hop async
+ * chain (language pack load -> session rebuild -> renderer attach) whose
+ * timing varies with how loaded the machine is when the whole file runs
+ * together — this polls against a real timeout instead.
+ */
+async function waitForCondition(predicate: () => boolean, timeoutMs = 4000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  throw new Error('timed out waiting for condition');
+}
+
 function pressKey(el: Element, key: string, code = ''): void {
   el.dispatchEvent(
     new window.KeyboardEvent('keydown', { key, code, bubbles: true, cancelable: true }),
@@ -84,6 +102,13 @@ function pressKey(el: Element, key: string, code = ''): void {
 
 beforeEach(() => {
   localStorage.clear();
+  // `settingsStore` is a real in-memory singleton: it reads localStorage once
+  // at module load, so clearing localStorage alone does NOT undo a mutation
+  // a previous test made with `settingsStore.update(...)`. Without this reset
+  // settings leak forward between tests in declaration order and surface as
+  // intermittent, hard-to-reproduce failures in unrelated tests later in the
+  // file (root-caused this session — see CHANGELOG).
+  settingsStore.reset();
   container = document.createElement('div');
   container.id = 'app';
   document.body.appendChild(container);
@@ -299,6 +324,41 @@ describe('type screen', () => {
     spy.mockRestore();
   });
 
+  it('"Code" fun mode (docs/01 §7) renders real code and offers a JavaScript/Python switch', async () => {
+    await mountApp();
+    await waitFor('.config__pill');
+
+    (container.querySelector('.config__pill') as HTMLButtonElement).click();
+    await settle();
+
+    const group = Array.from(container.querySelectorAll('.config__group')).find((g) =>
+      g.querySelector('.config__label')?.textContent?.includes('More modes'),
+    )!;
+    const codeBtn = Array.from(group.querySelectorAll('button')).find((b) => b.textContent === 'Code') as
+      | HTMLButtonElement
+      | undefined;
+    expect(codeBtn).toBeTruthy();
+
+    codeBtn!.click();
+    await waitFor('.u');
+
+    // The language switch only appears once Code is the active fun mode.
+    const jsBtn = Array.from(group.querySelectorAll('button')).find((b) => b.textContent === 'JavaScript') as
+      | HTMLButtonElement
+      | undefined;
+    const pyBtn = Array.from(group.querySelectorAll('button')).find((b) => b.textContent === 'Python') as
+      | HTMLButtonElement
+      | undefined;
+    expect(jsBtn).toBeTruthy();
+    expect(pyBtn).toBeTruthy();
+
+    const text = () => Array.from(container.querySelectorAll('.u')).map((s) => s.textContent).join('');
+    await waitForCondition(() => /function|const|class/.test(text()));
+
+    pyBtn!.click();
+    await waitForCondition(() => /def|lambda|range/.test(text()));
+  });
+
   it('on-screen keyboard (docs/01 §9) highlights the next key and tap-to-type feeds it', async () => {
     const { settingsStore } = await import('../src/store/settings');
     settingsStore.update((d) => {
@@ -310,20 +370,16 @@ describe('type screen', () => {
     await waitFor('.u');
     await waitFor('.onscreen-kb');
 
-    // The engine's tick drives the highlight, same cadence as live stats.
-    await settle(10);
-    const lit = container.querySelector('.kbd-diagram__key--next') as HTMLButtonElement | null;
-    expect(lit).toBeTruthy();
+    // Set once at reset time (not only on the engine's tick), but still
+    // async relative to this click — poll rather than guess a tick count.
+    // Tap the *highlighted* key specifically (not "any key whose glyph
+    // matches"), since a Shift-only expected character never appears as a
+    // key's visible glyph, but is still the correct key to tap.
+    await waitForCondition(() => !!container.querySelector('.kbd-diagram__key--next'));
+    const key = container.querySelector('.kbd-diagram__key--next') as HTMLButtonElement;
 
-    const first = container.querySelector('.u')!.textContent!;
-    const key = Array.from(container.querySelectorAll('.kbd-diagram__key')).find(
-      (b) => (b as HTMLButtonElement).dataset.code && b.querySelector('.kbd-diagram__glyph')?.textContent === first,
-    ) as HTMLButtonElement | undefined;
-    expect(key).toBeTruthy();
-
-    key!.click();
-    await settle(2);
-    expect(container.querySelector('.u')!.className).toContain('u--ok');
+    key.click();
+    await waitForCondition(() => container.querySelector('.u')!.className.includes('u--ok'));
   });
 
   it('on-screen keyboard also drives Hindi (InScript) typing via tap-to-type', async () => {
@@ -337,17 +393,17 @@ describe('type screen', () => {
     await mountApp();
     await waitFor('.u');
     await waitFor('.onscreen-kb');
-    await settle(10);
 
-    const first = container.querySelector('.u')!.textContent!;
-    const key = Array.from(container.querySelectorAll('.kbd-diagram__key')).find(
-      (b) => b.querySelector('.kbd-diagram__glyph')?.textContent === first,
-    ) as HTMLButtonElement | undefined;
-    expect(key).toBeTruthy();
+    // Poll rather than a fixed tick count: the Hindi word pack loads async,
+    // so the very first `.u` — and the key highlighted for it — can briefly
+    // still be mid-rebuild. Tap the highlighted key itself; some Hindi
+    // matras only exist in a key's Shift position and never appear as a
+    // key's visible glyph, so matching by displayed glyph text is wrong.
+    await waitForCondition(() => !!container.querySelector('.kbd-diagram__key--next'));
+    const key = container.querySelector('.kbd-diagram__key--next') as HTMLButtonElement;
 
-    key!.click();
-    await settle(2);
-    expect(container.querySelector('.u')!.className).toContain('u--ok');
+    key.click();
+    await waitForCondition(() => container.querySelector('.u')!.className.includes('u--ok'));
   });
 });
 

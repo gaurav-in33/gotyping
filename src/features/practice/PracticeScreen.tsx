@@ -76,9 +76,21 @@ export default function PracticeScreen() {
       profile: activeProfile,
       count,
       seed: `${activeProfile.id}-${lang}-${attempt}`,
-      easyShare: EASY_WORD_SHARE[settings.practice.difficulty],
+      // "Adaptive practice" off (Settings > Practice): skip the weak-area
+      // weighting entirely — easyShare: 1 makes every word generic/easy,
+      // reusing the same planner instead of a second text pipeline.
+      easyShare: settings.practice.adaptive ? EASY_WORD_SHARE[settings.practice.difficulty] : 1,
     });
-  }, [pack, aggregates, activeProfile, sessionSeconds, lang, attempt, settings.practice.difficulty]);
+  }, [
+    pack,
+    aggregates,
+    activeProfile,
+    sessionSeconds,
+    lang,
+    attempt,
+    settings.practice.difficulty,
+    settings.practice.adaptive,
+  ]);
 
   const onComplete = (m: Metrics, capture: readonly Capture[]): void => {
     setResult(m);

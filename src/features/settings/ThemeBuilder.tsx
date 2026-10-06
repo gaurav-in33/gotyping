@@ -171,10 +171,17 @@ export function ThemeBuilder({
         <span style={{ color: tokens['typed'] }}>The quick </span>
         <span style={{ color: tokens['untyped'] }}>brown fox </span>
         <span style={{ color: tokens['error'] }}>jvmps</span>
+        {/* Decorative preview only — not an interactive control, so it must
+            not look/behave like a clickable button (tabbable with no
+            effect). disabled + aria-hidden keep it out of the tab order
+            and off the accessibility tree while still showing the swatch. */}
         <button
           type="button"
           class="btn btn--sm"
           style={{ background: tokens['accent'], color: tokens['onAccent'], marginLeft: '8px' }}
+          disabled
+          aria-hidden="true"
+          tabIndex={-1}
         >
           Accent
         </button>

@@ -14,6 +14,7 @@ import {
   sampleWords,
 } from './generators';
 import { devanagariSetFor } from './devanagari-sets';
+import { generateCode } from './code';
 import type { Lesson } from '../curriculum';
 import { planPracticeText } from '../adaptive/planner';
 import { profileById } from '../adaptive/profiles';
@@ -36,14 +37,6 @@ export interface LessonContext {
 }
 
 const SYMBOL_CHARS = '!@#$%^&*()-_=+[]{}'.split('');
-const CODE_TEMPLATES = [
-  'function {a}({b}, {c}) {\n  return {b} + {c};\n}',
-  'const {a} = ({b}) => {b} * 2;',
-  'if ({a} > {b}) {\n  {a} = {b};\n}',
-  'for (let {a} = 0; {a} < {b}; {a}++) {\n  {c}.push({a});\n}',
-  'class {A} {\n  constructor({a}) {\n    this.{a} = {a};\n  }\n}',
-];
-const CODE_NAMES = ['count', 'total', 'index', 'value', 'result', 'items', 'data', 'temp'];
 
 /** Synthetic drill tokens built only from the taught keys (for tiny key sets). */
 function generateKeyDrill(keys: readonly string[], count: number, rng: ReturnType<typeof makeRng>): string {
@@ -93,24 +86,6 @@ function textForShift(pool: readonly string[], count: number, seed: number | str
     .join(' ');
 }
 
-function textForCode(seed: number | string, count: number): string {
-  const rng = makeRng(seed);
-  const lines: string[] = [];
-  const n = Math.max(1, Math.round(count / 10));
-  for (let i = 0; i < n; i++) {
-    let line = rng.pick(CODE_TEMPLATES);
-    const a = rng.pick(CODE_NAMES);
-    const b = rng.pick(CODE_NAMES.filter((x) => x !== a));
-    const c = rng.pick(CODE_NAMES);
-    line = line
-      .replace(/\{A\}/g, a.charAt(0).toUpperCase() + a.slice(1))
-      .replace(/\{a\}/g, a)
-      .replace(/\{b\}/g, b)
-      .replace(/\{c\}/g, c);
-    lines.push(line);
-  }
-  return lines.join('\n\n');
-}
 
 /** Words at least 6 letters long, or containing an awkward cluster — a simple, defensible "difficult" filter. */
 function difficultPool(pool: readonly string[]): string[] {
@@ -171,7 +146,9 @@ export function buildLessonText(lesson: Lesson, ctx: LessonContext): LessonTextR
       return { text: sampleWords(pool.length >= 8 ? pool : words, count, rng).join(' ') };
     }
     case 'code':
-      return { text: textForCode(seed, count) };
+      // JavaScript by default for the Learn curriculum; the Type > More
+      // modes "Code" fun mode lets the user pick JavaScript or Python.
+      return { text: generateCode({ lang: 'javascript', seed, count }) };
     case 'keys-hi': {
       const set = devanagariSetFor(lesson.keys);
       return textForKeys(words, set.join(''), count, seed);

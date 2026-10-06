@@ -22,6 +22,7 @@ import { OnScreenKeyboard } from './OnScreenKeyboard';
 import { layoutByAnyId } from '../../core/layouts/registry';
 import type { FunModeId } from '../../core/fun/modes';
 import { randomizeCase } from '../../core/fun/textFx';
+import { generateCode, type CodeLang } from '../../core/text/code';
 import { planPracticeText } from '../../core/adaptive/planner';
 import { profileById } from '../../core/adaptive/profiles';
 import {
@@ -48,6 +49,7 @@ const EMPTY_LIVE: LiveValues = {
   time: 0,
   countdown: false,
   progress: 0,
+  words: 0,
 };
 
 export default function TypeScreen() {
@@ -71,6 +73,7 @@ export default function TypeScreen() {
   const [focused, setFocused] = useState(false);
   const [seed, setSeed] = useState(() => Date.now());
   const [funMode, setFunMode] = useState<FunModeId>('none');
+  const [codeLang, setCodeLang] = useState<CodeLang>('javascript');
   const [agg, setAgg] = useState<Aggregates | null>(null);
   const [memoryHidden, setMemoryHidden] = useState(false);
   const [ghostResult, setGhostResult] = useState<{ wpm: number; beat: boolean } | null>(null);
@@ -136,6 +139,13 @@ export default function TypeScreen() {
       }
       const count = config.mode === 'words' ? config.wordCount : 60;
 
+      // Code fun mode (docs/01 §7 "Code"): real-looking JavaScript/Python
+      // snippets instead of prose, for Time and Words modes. Takes over from
+      // the Style picker while active, the same way "Difficult words" does.
+      if (funMode === 'code') {
+        return generateCode({ lang: codeLang, seed: s, count });
+      }
+
       // Difficult-word fun mode reuses Practice's adaptive planner (docs/05)
       // instead of a second weighting implementation — only meaningful for
       // the plain "Words" text style, and only once aggregates have loaded.
@@ -162,7 +172,15 @@ export default function TypeScreen() {
       }
       return funMode === 'randomCap' ? randomizeCase(text, s) : text;
     },
-    [config, settings.typing.punctuation, settings.typing.numbers, settings.typing.capitalization, funMode, agg],
+    [
+      config,
+      settings.typing.punctuation,
+      settings.typing.numbers,
+      settings.typing.capitalization,
+      funMode,
+      codeLang,
+      agg,
+    ],
   );
 
   // --------------------------------------------------------- session setup
@@ -186,22 +204,25 @@ export default function TypeScreen() {
         },
         isTime
           ? () => {
-              const text = buildText({
-                style: config.style,
-                words: p.words,
-                count: 40,
-                seed: `${s}-ext-${Math.random()}`,
-                punctuation: settings.typing.punctuation,
-                numbers: settings.typing.numbers,
-                capitalization: settings.typing.capitalization,
-              });
+              const text =
+                funMode === 'code'
+                  ? generateCode({ lang: codeLang, seed: `${s}-ext-${Math.random()}`, count: 40 })
+                  : buildText({
+                      style: config.style,
+                      words: p.words,
+                      count: 40,
+                      seed: `${s}-ext-${Math.random()}`,
+                      punctuation: settings.typing.punctuation,
+                      numbers: settings.typing.numbers,
+                      capitalization: settings.typing.capitalization,
+                    });
               return ' ' + (funMode === 'randomCap' ? randomizeCase(text, Math.random()) : text);
             }
           : undefined,
       );
       return sess;
     },
-    [config, makeText, settings.typing, funMode],
+    [config, makeText, settings.typing, funMode, codeLang],
   );
 
   const resetTest = useCallback(
@@ -285,7 +306,16 @@ export default function TypeScreen() {
   useEffect(() => {
     resetTest();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pack, config, seed, funMode, agg, settings.typing.stopOnError, settings.typing.backspace, settings.typing.skipWord, settings.typing.punctuation, settings.typing.numbers, settings.typing.capitalization]);
+  }, [pack, config, seed, funMode, codeLang, agg, settings.typing.stopOnError, settings.typing.backspace, settings.typing.skipWord, settings.typing.punctuation, settings.typing.numbers, settings.typing.capitalization]);
+
+  // Auto restart (docs/01 §9 Typing settings, Settings > Typing > Advanced):
+  // once a test finishes, quietly start a fresh one instead of waiting for
+  // "Try again" / "Next". A brief pause lets the result actually be seen.
+  useEffect(() => {
+    if (phase !== 'done' || !settings.typing.autoRestart) return;
+    const t = setTimeout(() => setSeed(Date.now()), 1500);
+    return () => clearTimeout(t);
+  }, [phase, settings.typing.autoRestart]);
 
   // Clear any pending Memory-mode reveal timer on unmount.
   useEffect(() => () => {
@@ -412,6 +442,7 @@ export default function TypeScreen() {
             : sess.activeMs(now()) / 1000,
         countdown: config.mode === 'time',
         progress,
+        words: m.correctWords + m.incorrectWords,
       });
       if (ghostRef.current) {
         setGhostLive({ you: sess.getPos(), ghost: ghostProgressAt(ghostRef.current, sess.activeMs(now())) });
@@ -582,6 +613,8 @@ export default function TypeScreen() {
         hidden={phase === 'typing' && settings.display.focusMode}
         funMode={funMode}
         onFunMode={onFunMode}
+        codeLang={codeLang}
+        onCodeLang={setCodeLang}
       />
 
       {lang === 'hi' && !hindiFunctional ? (

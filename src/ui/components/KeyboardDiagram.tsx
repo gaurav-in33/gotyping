@@ -37,19 +37,41 @@ export function KeyboardDiagram({
             const bg = colorFor?.(k);
             const extra = classFor?.(k) ?? '';
             const sub = subLabelFor?.(k);
-            return (
+            const content = (
+              <>
+                <span class="kbd-diagram__glyph">{k.normal || '·'}</span>
+                {sub ? <span class="kbd-diagram__sub">{sub}</span> : null}
+              </>
+            );
+            const cls = `kbd-diagram__key${extra ? ` ${extra}` : ''}`;
+            const title = `${k.code}: ${k.normal || '—'} / ${k.shift || '—'}${k.note ? ` — ${k.note}` : ''}`;
+            // Only render a real <button> when a click actually does
+            // something (the on-screen typing keyboard). Stats' heatmap and
+            // the Keyboard tester are read-only displays — giving those an
+            // interactive, focusable <button> that does nothing on click is
+            // a dead control, so render a plain non-interactive span there.
+            return onKeyClick ? (
               <button
                 key={k.code}
                 type="button"
-                class={`kbd-diagram__key${extra ? ` ${extra}` : ''}`}
+                class={cls}
                 style={bg ? { background: bg } : undefined}
-                title={`${k.code}: ${k.normal || '—'} / ${k.shift || '—'}${k.note ? ` — ${k.note}` : ''}`}
+                title={title}
                 data-code={k.code}
-                onClick={() => onKeyClick?.(k)}
+                onClick={() => onKeyClick(k)}
               >
-                <span class="kbd-diagram__glyph">{k.normal || '·'}</span>
-                {sub ? <span class="kbd-diagram__sub">{sub}</span> : null}
+                {content}
               </button>
+            ) : (
+              <span
+                key={k.code}
+                class={cls}
+                style={bg ? { background: bg } : undefined}
+                title={title}
+                data-code={k.code}
+              >
+                {content}
+              </span>
             );
           })}
         </div>

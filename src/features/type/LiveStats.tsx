@@ -8,6 +8,8 @@ export interface LiveValues {
   time: number;
   countdown: boolean;
   progress: number;
+  /** Words completed (correct + incorrect) so far. */
+  words: number;
 }
 
 function fmtTime(sec: number): string {
@@ -18,7 +20,7 @@ function fmtTime(sec: number): string {
 
 export function LiveStats({ v, settings }: { v: LiveValues; settings: Settings }) {
   const show = settings.display.liveStats;
-  const anyText = show.wpm || show.accuracy || show.errors || show.timer;
+  const anyText = show.wpm || show.accuracy || show.errors || show.timer || show.words;
 
   return (
     <div class="livestats" aria-live="off">
@@ -46,6 +48,13 @@ export function LiveStats({ v, settings }: { v: LiveValues; settings: Settings }
         <div class="livestats__item">
           <span class="livestats__value">{v.errors}</span>
           <span>errors</span>
+        </div>
+      ) : null}
+
+      {show.words ? (
+        <div class="livestats__item">
+          <span class="livestats__value">{v.words}</span>
+          <span>words</span>
         </div>
       ) : null}
 

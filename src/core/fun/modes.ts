@@ -15,7 +15,8 @@ export type FunModeId =
   | 'difficult'
   | 'master'
   | 'burst'
-  | 'endurance';
+  | 'endurance'
+  | 'code';
 
 export interface FunModeInfo {
   id: FunModeId;
@@ -33,6 +34,7 @@ export const FUN_MODES: FunModeInfo[] = [
   { id: 'master', label: 'Sudden death', hint: 'One mistake ends the test immediately.' },
   { id: 'burst', label: 'Speed burst', hint: 'Switches to a short 10s time test — go all out.' },
   { id: 'endurance', label: 'Endurance', hint: 'Switches to a long 10-minute time test.' },
+  { id: 'code', label: 'Code', hint: 'Type real-looking JavaScript or Python snippets instead of prose — pick the language below.' },
 ];
 
 export function funModeInfo(id: FunModeId): FunModeInfo {

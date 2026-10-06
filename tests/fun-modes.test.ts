@@ -9,6 +9,7 @@ import {
 } from '../src/core/fun/ghost';
 import type { Capture } from '../src/core/engine/session';
 import { FUN_MODES, funModeInfo } from '../src/core/fun/modes';
+import { CODE_LANGS, generateCode } from '../src/core/text/code';
 
 describe('fun modes (docs/01 §7)', () => {
   it('randomizeCase is deterministic for a given seed and only touches letters', () => {
@@ -60,5 +61,44 @@ describe('fun modes (docs/01 §7)', () => {
       expect(funModeInfo(m.id).id).toBe(m.id);
       expect(m.label.length).toBeGreaterThan(0);
     }
+  });
+
+  it('the "Code" fun mode is registered, docs/01 §7', () => {
+    expect(FUN_MODES.some((m) => m.id === 'code')).toBe(true);
+  });
+});
+
+describe('Code fun mode: generateCode (docs/01 §7 "Code")', () => {
+  it('is deterministic for a given seed', () => {
+    const a = generateCode({ lang: 'javascript', seed: 'code-seed', count: 40 });
+    const b = generateCode({ lang: 'javascript', seed: 'code-seed', count: 40 });
+    expect(a).toBe(b);
+  });
+
+  it('produces JavaScript that looks like JavaScript, not Python', () => {
+    const text = generateCode({ lang: 'javascript', seed: 'js-1', count: 80 });
+    expect(text.length).toBeGreaterThan(0);
+    expect(/function|const|class|=>/.test(text)).toBe(true);
+    expect(text).not.toMatch(/\bdef \w+\(/);
+  });
+
+  it('produces Python that looks like Python, not JavaScript', () => {
+    const text = generateCode({ lang: 'python', seed: 'py-1', count: 80 });
+    expect(text.length).toBeGreaterThan(0);
+    expect(/\bdef \w+\(|lambda|range\(/.test(text)).toBe(true);
+    expect(text).not.toMatch(/\bfunction\b|=>/);
+  });
+
+  it('both offered languages (docs §7) are backed by real, distinct output', () => {
+    expect(CODE_LANGS.map((l) => l.id).sort()).toEqual(['javascript', 'python']);
+    const js = generateCode({ lang: 'javascript', seed: 'same-seed', count: 40 });
+    const py = generateCode({ lang: 'python', seed: 'same-seed', count: 40 });
+    expect(js).not.toBe(py);
+  });
+
+  it('more count produces more snippet lines', () => {
+    const short = generateCode({ lang: 'javascript', seed: 'len', count: 10 });
+    const long = generateCode({ lang: 'javascript', seed: 'len', count: 100 });
+    expect(long.split('\n\n').length).toBeGreaterThan(short.split('\n\n').length);
   });
 });
